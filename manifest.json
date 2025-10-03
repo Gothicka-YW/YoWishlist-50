@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "YoWishlist 50",
+  "version": "1.0",
+  "description": "Export the first N items on yoworld.info/template. Cropped export stitches full height without scroll artifacts. Fan Tool",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.yoworld.info/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "YoWishlist 50",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.yoworld.info/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
