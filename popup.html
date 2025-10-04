@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>YoWishlist 50</title>
+    <style>
+      body{min-width:360px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:12px}
+      h1{font-size:16px; margin:0 0 8px}
+      .row{display:flex; align-items:center; gap:8px; margin:8px 0}
+      input[type="number"]{padding:6px 8px; border:1px solid #ddd; border-radius:8px; width:90px}
+      select{padding:6px 8px; border:1px solid #ddd; border-radius:8px}
+      button{background:#520404; color:#fff; border:1px solid #240101; border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:700; width:100%}
+      button:hover{background:#3A0303}
+      .muted{font-size:11px;color:#666;margin-top:6px; line-height:1.2}
+    </style>
+  </head>
+  <body>
+    <h1>YoWishlist 50</h1>
+    <div class="row">
+      <label for="limit">Limit</label>
+      <input id="limit" type="number" min="1" max="100" value="50" />
+      <label for="scope">Scope</label>
+      <select id="scope">
+        <option value="wish">Wish List</option>
+        <option value="sale">Sale Items</option>
+        <option value="auto">Auto</option>
+      </select>
+    </div>
+    <div class="row"><button id="btn-preview">Preview trim</button></div>
+    <div class="row"><button id="btn-export">Export first N (site)</button></div>
+    <div class="row"><button id="btn-export-crop">Export (crop)</button></div>
+    <div class="row"><button id="btn-restore">Restore list</button></div>
+    <div class="row"><button id="btn-pick">Pick card selector</button></div>
+    <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
+    <script src="popup.js"></script>
+  </body>
+</html>
