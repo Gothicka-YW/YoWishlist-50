@@ -1,70 +1,85 @@
 # YoWishlist-50 Help Guide
 
-## Overview
-YoWishlist-50 is a lightweight Chrome extension that allows you to track and manage up to **50 YoWorld items** in a personal wishlist. 
-All data is stored locally on your device using Chrome's storage system.
+## What it does
+YoWishlist-50 is a fan-made Chrome extension that trims and exports the first N tiles from the YoWorld template page at yoworld.info/template. It can target either the Wish List or Sale Items section and export using one of two modes:
+
+- Export first N (site): Triggers the site’s own Download/Export button if detectable.
+- Export (crop): Captures a stitched, full-height PNG of the selected section without scroll artifacts.
+
+No accounts or servers are used; settings are saved in Chrome sync storage. This tool isn’t affiliated with YoWorld or Big Viking Games.
 
 ---
 
-## Getting Started
+## Quick start
 
-1. **Install the Extension**
-   - Add YoWishlist-50 from the Chrome Web Store.
-   - After installation, the YoWishlist-50 icon will appear in your Chrome toolbar.
+1) Click the YoWishlist-50 icon in Chrome. If you aren’t already on yoworld.info/template, the extension will open it for you.
 
-2. **Open the Extension**
-   - Click the YoWishlist-50 icon to open the popup interface.
+2) Set your options in the popup:
+   - Limit: Number of items to keep (1–100). Defaults to 50.
+   - Scope: Wish List, Sale Items, or Auto.
 
----
+3) Optional: Click Pick card selector, then click a single item tile on the page. This helps the extension detect the grid when the default detection doesn’t match your layout.
 
-## Adding Items
+4) Click Preview trim to see exactly which items will remain (everything after N is temporarily hidden).
 
-- Type the **item name** in the input box.
-- (Optional) Add a **price or note** for your own reference.
-- Click **Add Item** to save it to your list.
+5) Choose an export:
+   - Export first N (site): Uses the page’s own Download/Export button. The extension tries to enable Preview, trims to N, and clicks the button for you. If the button isn’t found, you’ll be prompted to click it manually.
+   - Export (crop): Renders a stitched PNG of the section (with a white background) and saves it as yowishlist50_cropped.png.
 
----
-
-## Managing Items
-
-- **Edit**: Update an item’s name or value.
-- **Delete**: Remove an item from your wishlist.
-- **Limit**: You can store up to 50 items at a time.
+6) Click Restore list to put the page back to normal if you’re done previewing/exporting.
 
 ---
 
-## Organizing Your Wishlist
+## Buttons and settings
 
-- Items are displayed in a scrollable list inside the popup.
-- You can search/filter items using the search bar.
+- Limit: The number of tiles to keep from the start of the chosen section.
+- Scope: Which section to target.
+  - Wish List: Target the wishlist section.
+  - Sale Items: Target the sale items section.
+  - Auto: Let the extension choose the likely section based on layout.
+- Preview trim: Temporarily hides items after N so you can confirm the result.
+- Export first N (site): Tries to trigger the site’s download/export flow.
+- Export (crop): Captures a stitched screenshot and downloads a high-quality PNG.
+- Restore list: Undoes all temporary changes.
+- Pick card selector: Opens a picker overlay. Click a single tile (the outer card). The extension saves three helpers in Chrome storage:
+  - yl50_container: The grid container CSS path.
+  - yl50_card: The CSS selector for an item card.
+  - yl50_selectors: A hint to a representative card for detection.
 
----
-
-## Export & Import
-
-- **Export CSV**: Save your wishlist as a `.csv` file for backup or sharing.
-- **Import CSV**: Load a saved wishlist back into the extension.
-
----
-
-## In-Game Workflow
-
-- Keep the popup open while browsing YoWorld or the Marketplace.
-- Reference your wishlist when shopping, trading, or price-checking.
-
----
-
-## Resetting
-
-- Use **Clear All** in settings to start fresh with an empty wishlist.
+Notes:
+- The extension attempts to enable any “Preview” checkbox on the page automatically.
+- When using crop mode, a white background is temporarily forced to avoid gray/transparent seams.
+- The cropper stitches multiple viewport slices, so the PNG has no scroll seams and respects devicePixelRatio.
 
 ---
 
-## Notes & Privacy
+## Troubleshooting
 
-- Your wishlist data is stored locally in Chrome and is never uploaded to a server.
-- The extension only interacts with YoWorld-related tabs and does not track unrelated browsing.
+- Could not detect item grid — use Pick card selector on the desired section: Click Pick card selector in the popup, then click one of the item tiles on the page. Try again.
+- Download button not found — click it manually: Use Export first N (site) and then click the page’s Download/Export button yourself, or switch to Export (crop).
+- Wrong section trimmed: Change Scope to Wish List or Sale Items explicitly (instead of Auto), then Preview trim again.
+- Crop looks too tight/too wide: The tool adds a small padding around the section. If your page has unusual margins, try resizing slightly or scrolling so the section is centered before using Export (crop).
+- Nothing happens when clicking buttons: Ensure the popup stays open and you’re on yoworld.info/template. The extension auto-injects its content script, but if your tab is very busy, wait a moment and try again.
 
 ---
 
-Enjoy easier tracking of your most wanted YoWorld items!
+## Privacy and permissions
+
+- Storage: Saves only your settings (limit, scope, and selectors) in Chrome sync storage.
+- Host permissions: Runs only on *.yoworld.info pages.
+- Downloads: Needed to save the PNG from Export (crop).
+- Tab capture: Export (crop) uses captureVisibleTab to stitch a full-height image.
+
+This is an unofficial fan tool and does not collect or send any data to external servers.
+
+---
+
+## Tips
+
+- Keep the template page visible during Export (crop) so capture works as expected.
+- If the page has both Wish List and Sale Items visible, the tool hides the non-selected section for clean exports (it restores after).
+- You can change Limit to numbers other than 50 (up to 100) for flexible exports.
+
+---
+
+Enjoy faster, cleaner exports of your YoWorld template lists!
