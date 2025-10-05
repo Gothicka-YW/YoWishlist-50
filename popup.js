@@ -70,12 +70,15 @@
   function showTab(id){
     $('#view-main').style.display = (id==='main')? '' : 'none';
     $('#view-share').style.display = (id==='share')? '' : 'none';
+    $('#view-resources').style.display = (id==='resources')? '' : 'none';
     $('#tab-main').style.background = (id==='main')? '#520404' : '#333';
     $('#tab-share').style.background = (id==='share')? '#520404' : '#333';
+    if ($('#tab-resources')) $('#tab-resources').style.background = (id==='resources')? '#520404' : '#333';
     chrome.storage.sync.set({ [STORAGE_KEYS.lastTab]: id });
   }
   $('#tab-main').addEventListener('click', () => showTab('main'));
   $('#tab-share').addEventListener('click', () => showTab('share'));
+  if ($('#tab-resources')) $('#tab-resources').addEventListener('click', () => showTab('resources'));
   chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> showTab(r[STORAGE_KEYS.lastTab] || 'main'));
 
   // Persist imgbb key on change
@@ -199,4 +202,16 @@
   });
   $('#btn-copy-url').addEventListener('click', ()=>{ const v=$('#image-url').value; if(v) navigator.clipboard.writeText(v); });
   $('#btn-copy-forum').addEventListener('click', ()=>{ const v=$('#forum-link').value; if(v) navigator.clipboard.writeText(v); });
+
+  // Resources: open imgbb API key page
+  if ($('#btn-get-imgbb-key')){
+    $('#btn-get-imgbb-key').addEventListener('click', ()=>{
+      const url = 'https://api.imgbb.com/';
+      try{
+        chrome.tabs.create({ url });
+      } catch(e){
+        window.open(url, '_blank');
+      }
+    });
+  }
 })();

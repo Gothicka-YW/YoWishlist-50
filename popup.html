@@ -19,6 +19,7 @@
     <div class="row" id="tabs" style="gap:6px;margin-bottom:6px">
       <button id="tab-main" style="flex:1">Main</button>
       <button id="tab-share" style="flex:1;background:#333">Share</button>
+      <button id="tab-resources" style="flex:1;background:#333">Resources</button>
     </div>
     <div id="view-main">
     <div class="row">
@@ -68,6 +69,21 @@
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="btn-copy-forum" style="flex:1">Copy forum link</button>
         </div>
+      </div>
+    </div>
+    <div id="view-resources" style="display:none">
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it in the Share tab.</p>
+        <div style="display:flex; gap:6px">
+          <button id="btn-get-imgbb-key" style="flex:1">Get imgbb API key</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <p class="muted">Tips:
+          <br>- Keep the template page visible during Crop captures
+          <br>- Use Pick card selector if detection misses your grid
+          <br>- Set a Scope name to match your list title on the page
+        </p>
       </div>
     </div>
     <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
