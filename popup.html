@@ -4,23 +4,72 @@
     <meta charset="utf-8"/>
     <title>YoWishlist 50</title>
     <style>
-      body{min-width:360px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:12px}
+      :root{
+        --bg: #f6f7fb;
+        --fg: #111;
+        --muted: #666;
+        --surface: #ffffff;
+        --surface-2: #f1f3f8;
+        --border: #e7e9ee;
+        --accent: #7b1b1b;
+        --accent-contrast: #ffffff;
+        --btn-bg: var(--accent);
+        --btn-bg-hover: #5e1212;
+        --btn-border: #3a0a0a;
+        --input-bg: #ffffff;
+        --shadow: 0 10px 24px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.06);
+      }
+      /* Themes */
+      body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; }
+      body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; }
+      body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; }
+      body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; }
+
+      *{ box-sizing: border-box; }
+      body{
+        min-width:360px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color: var(--fg);
+        background: linear-gradient(180deg, var(--bg), var(--surface-2));
+        padding: 8px;
+      }
+      .app{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 12px;
+      }
       h1{font-size:16px; margin:0 0 8px}
       .row{display:flex; align-items:center; gap:8px; margin:8px 0}
-      input[type="number"]{padding:6px 8px; border:1px solid #ddd; border-radius:8px; width:90px}
-      select{padding:6px 8px; border:1px solid #ddd; border-radius:8px}
-      button{background:#520404; color:#fff; border:1px solid #240101; border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:700; width:100%}
-      button:hover{background:#3A0303}
-      .muted{font-size:11px;color:#666;margin-top:6px; line-height:1.2}
+      input[type="number"], input[type="text"], textarea{
+        padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);
+      }
+      input[type="number"]{ width: 110px; }
+      select{padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);}
+      button{
+        background: var(--btn-bg); color: var(--accent-contrast);
+        border:1px solid var(--btn-border); border-radius:12px; padding:10px 12px; cursor:pointer; font-weight:700; width:100%;
+        box-shadow: 0 2px 0 rgba(0,0,0,.2), inset 0 -1px 0 rgba(255,255,255,.08);
+        transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+      }
+      button:hover{ background: var(--btn-bg-hover); }
+      button:active{ transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(0,0,0,.1); }
+      .muted{font-size:11px;color:var(--muted);margin-top:6px; line-height:1.2}
+      /* Tabs */
+      #tabs{ gap:6px; margin-bottom:6px }
+      #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:700 }
+      #tabs .tab.active{ background: var(--accent); color: var(--accent-contrast); border-color: var(--btn-border); }
     </style>
   </head>
   <body>
-    <h1>YoWishlist 50</h1>
-    <div class="row" id="tabs" style="gap:6px;margin-bottom:6px">
-      <button id="tab-main" style="flex:1">Main</button>
-      <button id="tab-share" style="flex:1;background:#333">Share</button>
-      <button id="tab-resources" style="flex:1;background:#333">Resources</button>
-    </div>
+    <div class="app">
+      <h1>YoWishlist 50</h1>
+      <div class="row" id="tabs">
+        <button id="tab-main" class="tab active" style="flex:1">Main</button>
+        <button id="tab-share" class="tab" style="flex:1">Share</button>
+        <button id="tab-resources" class="tab" style="flex:1">Resources</button>
+      </div>
     <div id="view-main">
     <div class="row">
       <label for="limit">Limit</label>
@@ -79,6 +128,16 @@
         </div>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Theme</label>
+        <select id="theme-select">
+          <option value="default">Default</option>
+          <option value="midnight">Midnight</option>
+          <option value="yo-pink">Yo Pink</option>
+          <option value="emerald">Emerald</option>
+          <option value="contrast">High Contrast</option>
+        </select>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Tips:
           <br>- Keep the template page visible during Crop captures
           <br>- Use Pick card selector if detection misses your grid
@@ -86,7 +145,8 @@
         </p>
       </div>
     </div>
-    <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
+      <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>

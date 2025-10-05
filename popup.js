@@ -10,13 +10,16 @@
     hint: 'yl50_selectors',
     profiles: 'yl50_profiles',
     imgbbKey: 'yl50_imgbb_key',
-    lastTab: 'yl50_lastTab'
+    lastTab: 'yl50_lastTab',
+    theme: 'yl50_theme'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_profiles:{}, yl50_imgbb_key:'' }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_profiles:{}, yl50_imgbb_key:'', yl50_theme:'default' }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     renderProfiles(res.yl50_profiles || {});
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
     if ($('#scope-name')) $('#scope-name').value = res.yl50_scope_name || '';
+    applyTheme(res.yl50_theme || 'default');
+    if ($('#theme-select')) $('#theme-select').value = res.yl50_theme || 'default';
   });
   function activeTemplateTab(cb){
     chrome.tabs.query({ active:true, currentWindow:true }, (tabs) => {
@@ -71,9 +74,9 @@
     $('#view-main').style.display = (id==='main')? '' : 'none';
     $('#view-share').style.display = (id==='share')? '' : 'none';
     $('#view-resources').style.display = (id==='resources')? '' : 'none';
-    $('#tab-main').style.background = (id==='main')? '#520404' : '#333';
-    $('#tab-share').style.background = (id==='share')? '#520404' : '#333';
-    if ($('#tab-resources')) $('#tab-resources').style.background = (id==='resources')? '#520404' : '#333';
+    // Active tab classes
+    ['tab-main','tab-share','tab-resources'].forEach(tid=>{ const el = document.getElementById(tid); if(!el) return; el.classList.remove('active'); });
+    const active = document.getElementById('tab-'+id); if(active) active.classList.add('active');
     chrome.storage.sync.set({ [STORAGE_KEYS.lastTab]: id });
   }
   $('#tab-main').addEventListener('click', () => showTab('main'));
@@ -212,6 +215,23 @@
       } catch(e){
         window.open(url, '_blank');
       }
+    });
+  }
+
+  // Theme selection
+  function applyTheme(name){
+    const cls = ['theme-midnight','theme-yo-pink','theme-emerald','theme-contrast'];
+    document.body.classList.remove(...cls);
+    if(name==='midnight') document.body.classList.add('theme-midnight');
+    else if(name==='yo-pink') document.body.classList.add('theme-yo-pink');
+    else if(name==='emerald') document.body.classList.add('theme-emerald');
+    else if(name==='contrast') document.body.classList.add('theme-contrast');
+  }
+  if ($('#theme-select')){
+    $('#theme-select').addEventListener('change', ()=>{
+      const val = $('#theme-select').value;
+      applyTheme(val);
+      chrome.storage.sync.set({ [STORAGE_KEYS.theme]: val });
     });
   }
 })();
