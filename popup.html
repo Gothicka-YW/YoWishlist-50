@@ -5,40 +5,65 @@
     <title>YoWishlist 50</title>
     <style>
       :root{
-        --bg: #f6f7fb;
-        --fg: #111;
-        --muted: #666;
-        --surface: #ffffff;
-        --surface-2: #f1f3f8;
-        --border: #e7e9ee;
-        --accent: #7b1b1b;
+        /* Fantasy palette defaults */
+        --bg: #000000;      /* background gradient start */
+        --bg-2: #2E0B3A;    /* background gradient end (violet mist) */
+        --fg: #EAE8EC;      /* text on dark */
+        --muted: #B8ADB8;   /* secondary text */
+        --surface: #1A001A; /* deep violet-black */
+        --surface-2: #240224; /* slightly lighter panel */
+        --border: #3A0D46;  /* dark amethyst outline */
+        --accent: #6B1F7B;  /* royal amethyst */
         --accent-contrast: #ffffff;
         --btn-bg: var(--accent);
-        --btn-bg-hover: #5e1212;
-        --btn-border: #3a0a0a;
-        --input-bg: #ffffff;
-        --shadow: 0 10px 24px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.06);
+        --btn-bg-hover: #5a1b68;
+        --accent-ring: rgba(107,31,123,.36);
+        --btn-border: #3c0f46;
+        --input-bg: #190018; /* inputs slightly offset from surface */
+        --shadow: 0 10px 24px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.25);
+        --highlight: #7A0E21; /* blood rose */
+        --metallic: #C0BFC4; /* antique silver */
       }
       /* Themes */
-      body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; }
-      body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; }
-      body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; }
-      body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; }
+      body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); }
+      body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; --accent-ring: rgba(233,30,99,.30); }
+      body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; --accent-ring: rgba(15,157,88,.28); }
+      body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; --accent-ring: rgba(0,0,0,.28); }
 
       *{ box-sizing: border-box; }
+  html{ scrollbar-gutter: auto; }
       body{
         min-width:360px;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
         color: var(--fg);
-        background: linear-gradient(180deg, var(--bg), var(--surface-2));
-        padding: 8px;
+        /* Atmospheric background gradient */
+        background: linear-gradient(180deg, var(--bg), var(--bg-2));
+        padding: 2px;
+        /* Hide outer scrollbars so the inner card scrolls instead */
+        overflow: hidden;
       }
       .app{
+        position: relative;
         background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        box-shadow: var(--shadow);
+        border-radius: 28px;
+        /* Softer, elevated shadow with subtle inner stroke instead of a hard border */
+        box-shadow:
+          0 14px 30px rgba(0,0,0,.14),
+          0 6px 16px rgba(0,0,0,.08),
+          inset 0 0 0 1px var(--border);
         padding: 12px;
+        overflow: hidden; /* ensure rounded corners feel real */
+        /* Scroll inside the rounded card */
+        max-height: calc(100vh - 4px);
+        overflow-y: auto;
+      }
+      /* Subtle, inside-the-card scrollbar to avoid drawing attention to window edges */
+      .app{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.25) transparent; }
+      .app::-webkit-scrollbar{ width: 10px; height: 10px; }
+      .app::-webkit-scrollbar-track{ background: transparent; }
+      .app::-webkit-scrollbar-thumb{
+        background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.22));
+        border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
       }
       h1{font-size:16px; margin:0 0 8px}
       .row{display:flex; align-items:center; gap:8px; margin:8px 0}
@@ -48,18 +73,29 @@
       input[type="number"]{ width: 110px; }
       select{padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);}
       button{
-        background: var(--btn-bg); color: var(--accent-contrast);
+        background: var(--accent); color: var(--accent-contrast);
         border:1px solid var(--btn-border); border-radius:12px; padding:10px 12px; cursor:pointer; font-weight:700; width:100%;
-        box-shadow: 0 2px 0 rgba(0,0,0,.2), inset 0 -1px 0 rgba(255,255,255,.08);
-        transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+        box-shadow:
+          0 6px 14px rgba(0,0,0,.10),
+          0 2px 6px rgba(0,0,0,.08),
+          inset 0 -1px 0 rgba(0,0,0,.08),
+          inset 0 1px 0 rgba(255,255,255,.10);
+        transition: background .15s ease, transform .05s ease, box-shadow .15s ease, filter .15s ease;
       }
-      button:hover{ background: var(--btn-bg-hover); }
-      button:active{ transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(0,0,0,.1); }
+      button:hover{ background: var(--btn-bg-hover); filter: brightness(1.02); }
+      button:active{ transform: translateY(1px); box-shadow: 0 3px 8px rgba(0,0,0,.20), inset 0 1px 0 rgba(0,0,0,.12); }
+      button:focus{ outline: none; }
+      button:focus-visible{ box-shadow: 0 0 0 3px var(--accent-ring), 0 6px 14px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.08), inset 0 -1px 0 rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.10); }
+      button[disabled]{ opacity:.65; cursor:not-allowed; filter: saturate(.9) brightness(.98); }
       .muted{font-size:11px;color:var(--muted);margin-top:6px; line-height:1.2}
+  /* Drop zone */
+  #drop-zone{ display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; border:2px dashed var(--border); border-radius:12px; background: var(--surface-2); color: var(--muted); }
+  #drop-zone.dragover{ border-color: var(--accent); color: var(--fg); background: rgba(0,0,0,0.02); }
       /* Tabs */
       #tabs{ gap:6px; margin-bottom:6px }
-      #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:700 }
-      #tabs .tab.active{ background: var(--accent); color: var(--accent-contrast); border-color: var(--btn-border); }
+  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); }
+  #tabs .tab:hover{ filter: brightness(1.02); }
+  #tabs .tab.active{ background: var(--accent); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 4px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.10); }
     </style>
   </head>
   <body>
@@ -77,7 +113,7 @@
     </div>
     <div class="row" style="flex-direction:column; align-items:stretch">
       <label for="scope-name">Scope (list title on yoworld.info) — optional</label>
-      <input id="scope-name" placeholder="e.g., My Wishlist, Halloween Sale" style="padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+  <input id="scope-name" placeholder="e.g., My Wishlist, Halloween Sale" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
       <span class="muted">If blank, the tool uses your picked selector or auto-detects.</span>
     </div>
     <div class="row"><button id="btn-preview">Preview trim</button></div>
@@ -91,22 +127,32 @@
         <label>Saved wishlists</label>
         <div style="display:flex; gap:6px">
           <select id="profile-select" style="flex:1"></select>
-          <button id="profile-load" style="width:auto">Load</button>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px">
-          <input id="profile-name" placeholder="New profile name" style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
-          <button id="profile-save" style="width:auto">Save current</button>
-          <button id="profile-delete" style="width:auto; background:#6d0b0b">Delete</button>
+          <input id="profile-name" placeholder="New profile name" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <button id="profile-save" style="width:auto">Save Name</button>
+          <button id="profile-delete" style="width:auto">Delete</button>
         </div>
       </div>
       <div class="row"><button id="btn-crop-data">Capture (crop) to upload</button></div>
       <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>imgbb API key</label>
-        <input id="imgbb-key" placeholder="Paste your imgbb API key" style="padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+        <div id="drop-zone">Drop image here, paste (Ctrl+V), or use Load image file…</div>
+      </div>
+      <div class="row" style="display:flex; gap:6px">
+        <button id="btn-load-file" style="flex:1">Load image file…</button>
+        <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <img id="image-preview" alt="preview" style="max-width:100%; border-radius:10px; border:1px solid var(--border); display:none" />
+        <span class="muted">Tip: Load a saved PNG (e.g., posted on forums), then Upload to get a shareable URL + forum link.</span>
+      </div>
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="resize-390260" checked /> Auto-resize to 390×260 before upload</label>
+        <span id="qu-warning" class="muted" style="display:none">ImgBB key missing. Set it in Resources.</span>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Image URL</label>
-        <input id="image-url" readonly style="padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+  <input id="image-url" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="btn-upload" style="flex:1">Upload</button>
           <button id="btn-copy-url" style="width:auto">Copy URL</button>
@@ -114,7 +160,7 @@
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Forum link (BBCode)</label>
-        <textarea id="forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid #ddd; border-radius:8px"></textarea>
+  <textarea id="forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)"></textarea>
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="btn-copy-forum" style="flex:1">Copy forum link</button>
         </div>
@@ -122,9 +168,16 @@
     </div>
     <div id="view-resources" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
-        <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it in the Share tab.</p>
+        <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it below.</p>
         <div style="display:flex; gap:6px">
           <button id="btn-get-imgbb-key" style="flex:1">Get imgbb API key</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>imgbb API key</label>
+        <div style="display:flex; gap:6px">
+          <input id="imgbb-key" placeholder="Paste your imgbb API key" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <button id="btn-save-imgbb" style="width:auto">Save</button>
         </div>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">

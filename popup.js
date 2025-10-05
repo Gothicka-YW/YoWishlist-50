@@ -9,14 +9,16 @@
     card: 'yl50_card',
     hint: 'yl50_selectors',
     profiles: 'yl50_profiles',
+    lastProfile: 'yl50_profiles_last',
     imgbbKey: 'yl50_imgbb_key',
     lastTab: 'yl50_lastTab',
     theme: 'yl50_theme'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_profiles:{}, yl50_imgbb_key:'', yl50_theme:'default' }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_profiles:{}, yl50_profiles_last:'', yl50_imgbb_key:'', yl50_theme:'default' }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
-    renderProfiles(res.yl50_profiles || {});
+    renderProfiles(res.yl50_profiles || {}, res.yl50_profiles_last || '');
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
+    const warn = document.getElementById('qu-warning'); if(warn) warn.style.display = (res.yl50_imgbb_key ? 'none' : 'inline');
     if ($('#scope-name')) $('#scope-name').value = res.yl50_scope_name || '';
     applyTheme(res.yl50_theme || 'default');
     if ($('#theme-select')) $('#theme-select').value = res.yl50_theme || 'default';
@@ -88,6 +90,7 @@
   $('#imgbb-key').addEventListener('change', ()=>{
     const key = $('#imgbb-key').value.trim();
     chrome.storage.sync.set({ [STORAGE_KEYS.imgbbKey]: key });
+    const warn = document.getElementById('qu-warning'); if(warn) warn.style.display = (key ? 'none' : 'inline');
   });
 
   // Profiles (saved wishlists/settings)
@@ -106,12 +109,13 @@
       hint: s[STORAGE_KEYS.hint]||''
     }));
   }
-  function renderProfiles(map){
-    const sel = $('#profile-select'); sel.innerHTML = '';
+  function renderProfiles(map, selectName){
+    const sel = $('#profile-select'); if(!sel) return; sel.innerHTML = '';
     const names = Object.keys(map||{}).sort();
     names.forEach(n=>{
       const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
     });
+    if (selectName && names.includes(selectName)) sel.value = selectName;
   }
   function saveProfile(){
     const name = ($('#profile-name').value||'').trim(); if(!name) return;
@@ -119,7 +123,7 @@
       chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
         const profiles = res[STORAGE_KEYS.profiles] || {};
         profiles[name] = cfg;
-        chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles }, ()=> renderProfiles(profiles));
+        chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles, [STORAGE_KEYS.lastProfile]: name }, ()=> renderProfiles(profiles, name));
       });
     });
   }
@@ -135,7 +139,20 @@
         [STORAGE_KEYS.scopeName]: p.scopeName||'',
         [STORAGE_KEYS.container]: p.container||'',
         [STORAGE_KEYS.card]: p.card||'',
-        [STORAGE_KEYS.hint]: p.hint||''
+        [STORAGE_KEYS.hint]: p.hint||'',
+        [STORAGE_KEYS.lastProfile]: name
+      }, ()=>{
+        // Also push to the active tab immediately
+        withReady((tabId)=>{
+          chrome.tabs.sendMessage(tabId, {
+            type: 'yl50-update-settings',
+            limit: p.limit||50,
+            scopeName: p.scopeName||'',
+            containerSel: p.container||'',
+            cardSel: p.card||'',
+            selectorHint: p.hint||''
+          }, ()=>{});
+        });
       });
     });
   }
@@ -143,11 +160,12 @@
     const name = $('#profile-select').value; if(!name) return;
     chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
       const profiles = res[STORAGE_KEYS.profiles] || {}; delete profiles[name];
-      chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles }, ()=> renderProfiles(profiles));
+      chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles, [STORAGE_KEYS.lastProfile]: '' }, ()=> renderProfiles(profiles));
     });
   }
   $('#profile-save').addEventListener('click', saveProfile);
-  $('#profile-load').addEventListener('click', loadProfile);
+  // Auto-apply profile when selection changes
+  if ($('#profile-select')) $('#profile-select').addEventListener('change', loadProfile);
   $('#profile-delete').addEventListener('click', deleteProfile);
 
   // Capture to dataUrl
@@ -159,11 +177,89 @@
             $('#image-url').value = '';
             $('#forum-link').value = '';
             $('#image-url').dataset.dataUrl = res.dataUrl; // temp store
+            const img = document.getElementById('image-preview');
+            if (img){ img.src = res.dataUrl; img.style.display = 'block'; }
           }
         });
       });
     });
   });
+
+  // Load local image file to upload
+  if (document.getElementById('btn-load-file')){
+    document.getElementById('btn-load-file').addEventListener('click', ()=> document.getElementById('file-input').click());
+    document.getElementById('file-input').addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        stageDataUrl(reader.result);
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  // Quick Uploader: drag & drop and paste support
+  function stageDataUrl(dataUrl){
+    if(!dataUrl) return;
+    $('#image-url').value = '';
+    $('#forum-link').value = '';
+    $('#image-url').dataset.dataUrl = dataUrl;
+    const img = document.getElementById('image-preview');
+    if (img){ img.src = dataUrl; img.style.display = 'block'; }
+  }
+  const drop = document.getElementById('drop-zone');
+  if (drop){
+    drop.addEventListener('click', ()=> document.getElementById('btn-load-file')?.click());
+    drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', ()=> drop.classList.remove('dragover'));
+    drop.addEventListener('drop', (e)=>{
+      e.preventDefault(); drop.classList.remove('dragover');
+      const dt = e.dataTransfer; if(!dt) return;
+      const file = (dt.files && dt.files[0]) || null;
+      if (file && file.type && file.type.startsWith('image/')){
+        const reader = new FileReader();
+        reader.onload = ()=> stageDataUrl(reader.result);
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+  // Paste image from clipboard
+  document.addEventListener('paste', (e)=>{
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const it of items){
+      if (it.kind === 'file'){
+        const f = it.getAsFile();
+        if (f && f.type && f.type.startsWith('image/')){
+          const r = new FileReader();
+          r.onload = ()=> stageDataUrl(r.result);
+          r.readAsDataURL(f);
+          e.preventDefault();
+          break;
+        }
+      }
+    }
+  });
+
+  // Optional: resize to 390x260 like YoWorld Paint Quick Uploader (cover crop)
+  function resizeDataUrlCover(dataUrl, W=390, H=260){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      img.onload = () => {
+        const iw = img.naturalWidth||img.width, ih = img.naturalHeight||img.height;
+        if (!iw || !ih){ return resolve(dataUrl); }
+        const scale = Math.max(W/iw, H/ih);
+        const tw = Math.round(iw*scale), th = Math.round(ih*scale);
+        const cx = Math.round((tw - W)/2), cy = Math.round((th - H)/2);
+        const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, -cx, -cy, tw, th);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = ()=> resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
 
   // Upload via imgbb API
   async function uploadDataUrlImgBB(dataUrl){
@@ -192,7 +288,12 @@
   }
   $('#btn-upload').addEventListener('click', async()=>{
     try{
-      const dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) return;
+      let dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) { alert('No image loaded. Capture or load a file first.'); return; }
+      // If resize toggle is on, resize before upload
+      const resizeToggle = document.getElementById('resize-390260');
+      if (resizeToggle && resizeToggle.checked){
+        dataUrl = await resizeDataUrlCover(dataUrl, 390, 260);
+      }
       $('#btn-upload').disabled = true; $('#btn-upload').textContent = 'Uploading…';
       const url = await uploadDataUrlImgBB(dataUrl);
       $('#image-url').value = url; delete $('#image-url').dataset.dataUrl;
@@ -203,6 +304,17 @@
       $('#btn-upload').disabled = false; $('#btn-upload').textContent = 'Upload';
     }
   });
+  // Explicitly save imgbb key
+  if (document.getElementById('btn-save-imgbb')){
+    document.getElementById('btn-save-imgbb').addEventListener('click', ()=>{
+      const key = ($('#imgbb-key').value||'').trim();
+      chrome.storage.sync.set({ [STORAGE_KEYS.imgbbKey]: key }, ()=>{
+        // optional small feedback
+        document.getElementById('btn-save-imgbb').textContent = 'Saved';
+        setTimeout(()=> document.getElementById('btn-save-imgbb').textContent = 'Save', 1200);
+      });
+    });
+  }
   $('#btn-copy-url').addEventListener('click', ()=>{ const v=$('#image-url').value; if(v) navigator.clipboard.writeText(v); });
   $('#btn-copy-forum').addEventListener('click', ()=>{ const v=$('#forum-link').value; if(v) navigator.clipboard.writeText(v); });
 

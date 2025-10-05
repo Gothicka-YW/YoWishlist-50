@@ -213,7 +213,17 @@ const docTop = rect.top + window.scrollY;
       if (typeof msg.limit==='number') state.limit=msg.limit;
       if (typeof msg.which==='string') state.which=msg.which; // legacy
       if (typeof msg.scopeName==='string') state.scopeName=msg.scopeName;
-      chrome.storage.sync.set({ yl50_limit: state.limit, yl50_scope: state.which, yl50_scope_name: state.scopeName });
+      if (typeof msg.containerSel==='string') state.containerSel=msg.containerSel;
+      if (typeof msg.cardSel==='string') state.cardSel=msg.cardSel;
+      if (typeof msg.selectorHint==='string') state.selectorHint=msg.selectorHint;
+      chrome.storage.sync.set({
+        yl50_limit: state.limit,
+        yl50_scope: state.which,
+        yl50_scope_name: state.scopeName,
+        yl50_container: state.containerSel,
+        yl50_card: state.cardSel,
+        yl50_selectors: state.selectorHint
+      });
       sendResponse && sendResponse({ ok:true }); return true; }
     if (msg.type === 'yl50-preview'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok) toast('Could not detect item grid — use Pick card selector on the desired section.'); else toast(`Preview: showing first ${res.count} of ${res.total}`); sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total }); return true; }
     if (msg.type === 'yl50-export'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; } forceWhiteBackground(true); const clicked=clickDownload(); if(!clicked) toast('Download button not found — click it manually.'); setTimeout(()=>{ forceWhiteBackground(false); restore(); restoreRemovedSections(); }, 1400); sendResponse && sendResponse({ ok:true, count: res.count, clicked }); return true; }
