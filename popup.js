@@ -8,12 +8,14 @@
     card: 'yl50_card',
     hint: 'yl50_selectors',
     profiles: 'yl50_profiles',
+    imgbbKey: 'yl50_imgbb_key',
     lastTab: 'yl50_lastTab'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope:'wish', yl50_profiles:{} }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope:'wish', yl50_profiles:{}, yl50_imgbb_key:'' }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     $('#scope').value = res.yl50_scope || 'wish';
     renderProfiles(res.yl50_profiles || {});
+    $('#imgbb-key').value = res.yl50_imgbb_key || '';
   });
   function activeTemplateTab(cb){
     chrome.tabs.query({ active:true, currentWindow:true }, (tabs) => {
@@ -66,6 +68,12 @@
   $('#tab-main').addEventListener('click', () => showTab('main'));
   $('#tab-share').addEventListener('click', () => showTab('share'));
   chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> showTab(r[STORAGE_KEYS.lastTab] || 'main'));
+
+  // Persist imgbb key on change
+  $('#imgbb-key').addEventListener('change', ()=>{
+    const key = $('#imgbb-key').value.trim();
+    chrome.storage.sync.set({ [STORAGE_KEYS.imgbbKey]: key });
+  });
 
   // Profiles (saved wishlists/settings)
   function getCurrentSettings(cb){
@@ -142,19 +150,26 @@
     });
   });
 
-  // Upload (Catbox anonymous)
-  async function uploadDataUrl(dataUrl){
-    // Convert dataUrl to Blob
-    const resp = await fetch(dataUrl);
-    const blob = await resp.blob();
+  // Upload via imgbb API
+  async function uploadDataUrlImgBB(dataUrl){
+    const key = ($('#imgbb-key').value||'').trim();
+    if(!key) throw new Error('Missing imgbb API key');
+    const base64 = dataUrl.split(',')[1];
     const form = new FormData();
-    form.append('reqtype','fileupload');
-    form.append('userhash','');
-    form.append('fileToUpload', new File([blob], 'yowishlist50.png', { type: 'image/png' }));
-    const up = await fetch('https://catbox.moe/user/api.php', { method:'POST', body: form });
-    const text = await up.text();
-    if(!/^https?:\/\//i.test(text)) throw new Error(text||'Upload failed');
-    return text.trim();
+    form.append('key', key);
+    form.append('image', base64);
+    // Optional: set name/expiration
+    form.append('name', 'yowishlist50');
+    const up = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body: form });
+    const json = await up.json();
+    if(!json || !json.success){
+      const msg = (json && json.error && (json.error.message||json.error)) || 'Upload failed';
+      throw new Error(msg);
+    }
+    // Prefer direct URL to image
+    const url = (json.data && (json.data.url || json.data.display_url || (json.data.image && json.data.image.url))) || '';
+    if(!url) throw new Error('Upload succeeded but URL missing');
+    return url;
   }
   function makeForumLink(url){
     const title = 'YoWishlist 50';
@@ -164,7 +179,7 @@
     try{
       const dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) return;
       $('#btn-upload').disabled = true; $('#btn-upload').textContent = 'Uploading…';
-      const url = await uploadDataUrl(dataUrl);
+      const url = await uploadDataUrlImgBB(dataUrl);
       $('#image-url').value = url; delete $('#image-url').dataset.dataUrl;
       $('#forum-link').value = makeForumLink(url);
     } catch(e){
