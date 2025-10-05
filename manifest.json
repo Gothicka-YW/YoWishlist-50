@@ -8,7 +8,8 @@
     "activeTab",
     "tabs",
     "downloads",
-    "scripting"
+    "scripting",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "*://*.yoworld.info/*",
