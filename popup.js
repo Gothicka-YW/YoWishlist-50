@@ -57,6 +57,14 @@
   $('#btn-restore').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-restore')); });
   $('#btn-pick').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-pick')); });
 
+  // Reflect auto scope after pick
+  chrome.storage.onChanged.addListener((changes, area)=>{
+    if(area==='sync' && changes && changes[STORAGE_KEYS.scope] && $('#scope')){
+      const nv = changes[STORAGE_KEYS.scope].newValue;
+      if(nv) $('#scope').value = nv;
+    }
+  });
+
   // Tabs
   function showTab(id){
     $('#view-main').style.display = (id==='main')? '' : 'none';
