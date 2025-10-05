@@ -3,7 +3,8 @@
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const STORAGE_KEYS = {
     limit: 'yl50_limit',
-    scope: 'yl50_scope',
+    scope: 'yl50_scope', // legacy
+    scopeName: 'yl50_scope_name',
     container: 'yl50_container',
     card: 'yl50_card',
     hint: 'yl50_selectors',
@@ -11,11 +12,11 @@
     imgbbKey: 'yl50_imgbb_key',
     lastTab: 'yl50_lastTab'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope:'wish', yl50_profiles:{}, yl50_imgbb_key:'' }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_profiles:{}, yl50_imgbb_key:'' }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
-    $('#scope').value = res.yl50_scope || 'wish';
     renderProfiles(res.yl50_profiles || {});
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
+    if ($('#scope-name')) $('#scope-name').value = res.yl50_scope_name || '';
   });
   function activeTemplateTab(cb){
     chrome.tabs.query({ active:true, currentWindow:true }, (tabs) => {
@@ -46,9 +47,9 @@
   function withReady(cb){ activeTemplateTab((tabId) => ensureContentReady(tabId, () => cb(tabId))); }
   function sendUpdate(tabId, done){
     const limit = Math.max(1, Math.min(100, Number($('#limit').value)||50));
-    const which = $('#scope').value || 'wish';
-    chrome.storage.sync.set({ yl50_limit: limit, yl50_scope: which });
-    chrome.tabs.sendMessage(tabId, { type: 'yl50-update-settings', limit, which }, () => done && done());
+    const scopeName = ($('#scope-name') && $('#scope-name').value || '').trim();
+    chrome.storage.sync.set({ yl50_limit: limit, yl50_scope_name: scopeName });
+    chrome.tabs.sendMessage(tabId, { type: 'yl50-update-settings', limit, scopeName }, () => done && done());
   }
   function run(tabId, type){ sendUpdate(tabId, () => chrome.tabs.sendMessage(tabId, { type }, () => {})); }
   $('#btn-preview').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-preview')); });
@@ -57,11 +58,11 @@
   $('#btn-restore').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-restore')); });
   $('#btn-pick').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-pick')); });
 
-  // Reflect auto scope after pick
+  // Reflect scope-name changes saved elsewhere (optional)
   chrome.storage.onChanged.addListener((changes, area)=>{
-    if(area==='sync' && changes && changes[STORAGE_KEYS.scope] && $('#scope')){
-      const nv = changes[STORAGE_KEYS.scope].newValue;
-      if(nv) $('#scope').value = nv;
+    if(area==='sync' && changes && changes[STORAGE_KEYS.scopeName] && $('#scope-name')){
+      const nv = changes[STORAGE_KEYS.scopeName].newValue;
+      if(typeof nv === 'string') $('#scope-name').value = nv;
     }
   });
 
@@ -87,13 +88,13 @@
   function getCurrentSettings(cb){
     chrome.storage.sync.get({
       [STORAGE_KEYS.limit]:50,
-      [STORAGE_KEYS.scope]:'wish',
+      [STORAGE_KEYS.scopeName]:'',
       [STORAGE_KEYS.container]:'',
       [STORAGE_KEYS.card]:'',
       [STORAGE_KEYS.hint]:''
     }, (s)=> cb({
       limit: Number($('#limit').value)||s[STORAGE_KEYS.limit]||50,
-      scope: $('#scope').value || s[STORAGE_KEYS.scope] || 'wish',
+      scopeName: ($('#scope-name') && $('#scope-name').value || s[STORAGE_KEYS.scopeName] || '').trim(),
       container: s[STORAGE_KEYS.container]||'',
       card: s[STORAGE_KEYS.card]||'',
       hint: s[STORAGE_KEYS.hint]||''
@@ -121,11 +122,11 @@
     chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
       const p = (res[STORAGE_KEYS.profiles]||{})[name]; if(!p) return;
       $('#limit').value = p.limit || 50;
-      $('#scope').value = p.scope || 'wish';
+      if ($('#scope-name')) $('#scope-name').value = p.scopeName || '';
       // Persist and notify content
       chrome.storage.sync.set({
         [STORAGE_KEYS.limit]: p.limit||50,
-        [STORAGE_KEYS.scope]: p.scope||'wish',
+        [STORAGE_KEYS.scopeName]: p.scopeName||'',
         [STORAGE_KEYS.container]: p.container||'',
         [STORAGE_KEYS.card]: p.card||'',
         [STORAGE_KEYS.hint]: p.hint||''

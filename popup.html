@@ -24,12 +24,11 @@
     <div class="row">
       <label for="limit">Limit</label>
       <input id="limit" type="number" min="1" max="100" value="50" />
-      <label for="scope">Scope</label>
-      <select id="scope">
-        <option value="wish">Wish List</option>
-        <option value="sale">Sale Items</option>
-        <option value="auto">Auto</option>
-      </select>
+    </div>
+    <div class="row" style="flex-direction:column; align-items:stretch">
+      <label for="scope-name">Scope (list title on yoworld.info) — optional</label>
+      <input id="scope-name" placeholder="e.g., My Wishlist, Halloween Sale" style="padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+      <span class="muted">If blank, the tool uses your picked selector or auto-detects.</span>
     </div>
     <div class="row"><button id="btn-preview">Preview trim</button></div>
     <div class="row"><button id="btn-export">Export first N (site)</button></div>
