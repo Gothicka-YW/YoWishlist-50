@@ -16,6 +16,11 @@
   </head>
   <body>
     <h1>YoWishlist 50</h1>
+    <div class="row" id="tabs" style="gap:6px;margin-bottom:6px">
+      <button id="tab-main" style="flex:1">Main</button>
+      <button id="tab-share" style="flex:1;background:#333">Share</button>
+    </div>
+    <div id="view-main">
     <div class="row">
       <label for="limit">Limit</label>
       <input id="limit" type="number" min="1" max="100" value="50" />
@@ -31,6 +36,37 @@
     <div class="row"><button id="btn-export-crop">Export (crop)</button></div>
     <div class="row"><button id="btn-restore">Restore list</button></div>
     <div class="row"><button id="btn-pick">Pick card selector</button></div>
+    </div>
+    <div id="view-share" style="display:none">
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Saved wishlists</label>
+        <div style="display:flex; gap:6px">
+          <select id="profile-select" style="flex:1"></select>
+          <button id="profile-load" style="width:auto">Load</button>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <input id="profile-name" placeholder="New profile name" style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+          <button id="profile-save" style="width:auto">Save current</button>
+          <button id="profile-delete" style="width:auto; background:#6d0b0b">Delete</button>
+        </div>
+      </div>
+      <div class="row"><button id="btn-crop-data">Capture (crop) to upload</button></div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Image URL</label>
+        <input id="image-url" readonly style="padding:6px 8px; border:1px solid #ddd; border-radius:8px" />
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <button id="btn-upload" style="flex:1">Upload</button>
+          <button id="btn-copy-url" style="width:auto">Copy URL</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Forum link (BBCode)</label>
+        <textarea id="forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid #ddd; border-radius:8px"></textarea>
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <button id="btn-copy-forum" style="flex:1">Copy forum link</button>
+        </div>
+      </div>
+    </div>
     <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
     <script src="popup.js"></script>
   </body>

@@ -1,8 +1,19 @@
 (function(){
   const $ = (sel) => document.querySelector(sel);
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope:'wish' }, (res) => {
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const STORAGE_KEYS = {
+    limit: 'yl50_limit',
+    scope: 'yl50_scope',
+    container: 'yl50_container',
+    card: 'yl50_card',
+    hint: 'yl50_selectors',
+    profiles: 'yl50_profiles',
+    lastTab: 'yl50_lastTab'
+  };
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope:'wish', yl50_profiles:{} }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     $('#scope').value = res.yl50_scope || 'wish';
+    renderProfiles(res.yl50_profiles || {});
   });
   function activeTemplateTab(cb){
     chrome.tabs.query({ active:true, currentWindow:true }, (tabs) => {
@@ -43,4 +54,125 @@
   $('#btn-export-crop').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-export-crop')); });
   $('#btn-restore').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-restore')); });
   $('#btn-pick').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-pick')); });
+
+  // Tabs
+  function showTab(id){
+    $('#view-main').style.display = (id==='main')? '' : 'none';
+    $('#view-share').style.display = (id==='share')? '' : 'none';
+    $('#tab-main').style.background = (id==='main')? '#520404' : '#333';
+    $('#tab-share').style.background = (id==='share')? '#520404' : '#333';
+    chrome.storage.sync.set({ [STORAGE_KEYS.lastTab]: id });
+  }
+  $('#tab-main').addEventListener('click', () => showTab('main'));
+  $('#tab-share').addEventListener('click', () => showTab('share'));
+  chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> showTab(r[STORAGE_KEYS.lastTab] || 'main'));
+
+  // Profiles (saved wishlists/settings)
+  function getCurrentSettings(cb){
+    chrome.storage.sync.get({
+      [STORAGE_KEYS.limit]:50,
+      [STORAGE_KEYS.scope]:'wish',
+      [STORAGE_KEYS.container]:'',
+      [STORAGE_KEYS.card]:'',
+      [STORAGE_KEYS.hint]:''
+    }, (s)=> cb({
+      limit: Number($('#limit').value)||s[STORAGE_KEYS.limit]||50,
+      scope: $('#scope').value || s[STORAGE_KEYS.scope] || 'wish',
+      container: s[STORAGE_KEYS.container]||'',
+      card: s[STORAGE_KEYS.card]||'',
+      hint: s[STORAGE_KEYS.hint]||''
+    }));
+  }
+  function renderProfiles(map){
+    const sel = $('#profile-select'); sel.innerHTML = '';
+    const names = Object.keys(map||{}).sort();
+    names.forEach(n=>{
+      const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
+    });
+  }
+  function saveProfile(){
+    const name = ($('#profile-name').value||'').trim(); if(!name) return;
+    getCurrentSettings((cfg)=>{
+      chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
+        const profiles = res[STORAGE_KEYS.profiles] || {};
+        profiles[name] = cfg;
+        chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles }, ()=> renderProfiles(profiles));
+      });
+    });
+  }
+  function loadProfile(){
+    const name = $('#profile-select').value; if(!name) return;
+    chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
+      const p = (res[STORAGE_KEYS.profiles]||{})[name]; if(!p) return;
+      $('#limit').value = p.limit || 50;
+      $('#scope').value = p.scope || 'wish';
+      // Persist and notify content
+      chrome.storage.sync.set({
+        [STORAGE_KEYS.limit]: p.limit||50,
+        [STORAGE_KEYS.scope]: p.scope||'wish',
+        [STORAGE_KEYS.container]: p.container||'',
+        [STORAGE_KEYS.card]: p.card||'',
+        [STORAGE_KEYS.hint]: p.hint||''
+      });
+    });
+  }
+  function deleteProfile(){
+    const name = $('#profile-select').value; if(!name) return;
+    chrome.storage.sync.get({ [STORAGE_KEYS.profiles]:{} }, (res)=>{
+      const profiles = res[STORAGE_KEYS.profiles] || {}; delete profiles[name];
+      chrome.storage.sync.set({ [STORAGE_KEYS.profiles]: profiles }, ()=> renderProfiles(profiles));
+    });
+  }
+  $('#profile-save').addEventListener('click', saveProfile);
+  $('#profile-load').addEventListener('click', loadProfile);
+  $('#profile-delete').addEventListener('click', deleteProfile);
+
+  // Capture to dataUrl
+  $('#btn-crop-data').addEventListener('click', ()=>{
+    withReady((tabId)=>{
+      sendUpdate(tabId, ()=>{
+        chrome.tabs.sendMessage(tabId, { type:'yl50-export-crop-data' }, (res)=>{
+          if(res && res.ok && res.dataUrl){
+            $('#image-url').value = '';
+            $('#forum-link').value = '';
+            $('#image-url').dataset.dataUrl = res.dataUrl; // temp store
+          }
+        });
+      });
+    });
+  });
+
+  // Upload (Catbox anonymous)
+  async function uploadDataUrl(dataUrl){
+    // Convert dataUrl to Blob
+    const resp = await fetch(dataUrl);
+    const blob = await resp.blob();
+    const form = new FormData();
+    form.append('reqtype','fileupload');
+    form.append('userhash','');
+    form.append('fileToUpload', new File([blob], 'yowishlist50.png', { type: 'image/png' }));
+    const up = await fetch('https://catbox.moe/user/api.php', { method:'POST', body: form });
+    const text = await up.text();
+    if(!/^https?:\/\//i.test(text)) throw new Error(text||'Upload failed');
+    return text.trim();
+  }
+  function makeForumLink(url){
+    const title = 'YoWishlist 50';
+    return `[url=${url}][img]${url}[/img][/url]\n[b]${title}[/b] Exported with YoWishlist-50`;
+  }
+  $('#btn-upload').addEventListener('click', async()=>{
+    try{
+      const dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) return;
+      $('#btn-upload').disabled = true; $('#btn-upload').textContent = 'Uploading…';
+      const url = await uploadDataUrl(dataUrl);
+      $('#image-url').value = url; delete $('#image-url').dataset.dataUrl;
+      $('#forum-link').value = makeForumLink(url);
+    } catch(e){
+      alert('Upload failed: ' + (e&&e.message||e));
+    } finally {
+      $('#btn-upload').disabled = false; $('#btn-upload').textContent = 'Upload';
+    }
+  });
+  $('#btn-copy-url').addEventListener('click', ()=>{ const v=$('#image-url').value; if(v) navigator.clipboard.writeText(v); });
+  $('#btn-copy-forum').addEventListener('click', ()=>{ const v=$('#forum-link').value; if(v) navigator.clipboard.writeText(v); });
 })();
