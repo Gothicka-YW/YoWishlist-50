@@ -1,13 +1,60 @@
 /* Local fonts for YoWishlist-50 (MV3-safe)
-   Drop .woff2 files in this folder and declare them here.
-   Example block:
+   These @font-face rules are generated based on .woff2 files in this folder.
+   Add or remove .woff2 files and reload the extension to update the dropdown.
+*/
 
 @font-face {
-  font-family: "Header Script";
-  src: url("./HeaderScript-Regular.woff2") format("woff2");
+  font-family: "Comforter";
+  src: url("./Comforter-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
-*/
+@font-face {
+  font-family: "Dancing Script";
+  src: url("./DancingScript-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Festive";
+  src: url("./Festive-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Meddon";
+  src: url("./Meddon-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pacifico";
+  src: url("./Pacifico-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Style Script";
+  src: url("./StyleScript-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Twinkle Star";
+  src: url("./TwinkleStar-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

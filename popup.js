@@ -30,8 +30,8 @@
     applyTheme(res.yl50_theme || 'default');
     if ($('#theme-select')) $('#theme-select').value = res.yl50_theme || 'default';
     if ($('#auto-switch-share')) $('#auto-switch-share').checked = !!res.yl50_auto_switch_share;
-    applyHeaderFont(res.yl50_header_font || 'sans');
-    if ($('#header-font-select')) $('#header-font-select').value = res.yl50_header_font || 'sans';
+  // Populate local fonts from fonts.css and apply
+  initLocalFonts(res.yl50_header_font || '');
     // Saved cap + saved entries
     if ($('#saved-cap-select')) $('#saved-cap-select').value = String(res.yl50_saved_cap || '50');
   if ($('#include-title')) $('#include-title').checked = !!res.yl50_include_title;
@@ -638,23 +638,38 @@
   }
 
   // Header font selection
-  function applyHeaderFont(name){
-  const cls = ['header-font-sans','header-font-script-brush','header-font-script-segoe','header-font-handwritten','header-font-roundhand','header-font-cursive','header-font-local-1'];
-    document.body.classList.remove(...cls);
-    if (name === 'script-brush') document.body.classList.add('header-font-script-brush');
-    else if (name === 'script-segoe') document.body.classList.add('header-font-script-segoe');
-    else if (name === 'handwritten') document.body.classList.add('header-font-handwritten');
-    else if (name === 'roundhand') document.body.classList.add('header-font-roundhand');
-    else if (name === 'cursive') document.body.classList.add('header-font-cursive');
-    else if (name === 'local-1') document.body.classList.add('header-font-local-1');
-    else document.body.classList.add('header-font-sans');
+  async function initLocalFonts(saved){
+    try{
+      const link = document.querySelector('link[href="fonts/fonts.css"]');
+      if (!link){ populateFontSelect([]); return; }
+      const cssUrl = link.href;
+      const res = await fetch(cssUrl, { cache: 'no-cache' });
+      const text = await res.text();
+      const families = Array.from(text.matchAll(/@font-face\s*\{[^}]*font-family\s*:\s*(["'])?([^;"']+)\1?\s*;/gi)).map(m=>m[2]).filter(Boolean);
+      const unique = Array.from(new Set(families));
+      populateFontSelect(unique, saved);
+    } catch { populateFontSelect([], saved); }
   }
-  if ($('#header-font-select')){
-    $('#header-font-select').addEventListener('change', ()=>{
-      const val = $('#header-font-select').value;
-      applyHeaderFont(val);
-      chrome.storage.sync.set({ [STORAGE_KEYS.headerFont]: val });
+  function populateFontSelect(families, saved){
+    const sel = document.getElementById('header-font-select'); if (!sel) return;
+    sel.innerHTML = '';
+    // Default option uses built-in sans stack
+    const def = document.createElement('option'); def.value = ''; def.textContent = 'Default (Sans)'; sel.appendChild(def);
+    families.forEach(f=>{ const o=document.createElement('option'); o.value=f; o.textContent=f; sel.appendChild(o); });
+    // Apply saved
+    sel.value = saved || '';
+    applyCustomHeaderFont(sel.value);
+    sel.addEventListener('change', ()=>{
+      applyCustomHeaderFont(sel.value);
+      chrome.storage.sync.set({ [STORAGE_KEYS.headerFont]: sel.value });
     });
+  }
+  function applyCustomHeaderFont(family){
+    // Remove legacy classes and use a single custom class + CSS var
+    document.body.classList.remove('header-font-sans','header-font-script-brush','header-font-script-segoe','header-font-handwritten','header-font-roundhand','header-font-cursive','header-font-local-1');
+    if (!family){ document.body.classList.add('header-font-sans'); document.body.style.removeProperty('--yl-header-font'); return; }
+    document.body.style.setProperty('--yl-header-font', `'${family}'`);
+    document.body.classList.add('header-font-custom');
   }
 
   // Test imgbb key without uploading

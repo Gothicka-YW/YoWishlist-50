@@ -77,6 +77,8 @@
   body.header-font-handwritten h1{ font-family: "Bradley Hand", "Segoe Script", "Lucida Handwriting", cursive; font-weight:700; letter-spacing:.3px; }
   body.header-font-roundhand h1{ font-family: "Snell Roundhand", "Apple Chancery", "Segoe Script", cursive; font-weight:700; letter-spacing:.3px; }
   body.header-font-cursive h1{ font-family: cursive; font-weight:700; letter-spacing:.3px; }
+  /* Dynamically selected local font (from fonts/fonts.css) */
+  body.header-font-custom h1{ font-family: var(--yl-header-font), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:700; letter-spacing:.3px; }
   /* Example class for a local font family declared in fonts/fonts.css */
   body.header-font-local-1 h1{ font-family: "Header Script", "Segoe Script", cursive; font-weight:700; letter-spacing:.3px; }
       .row{display:flex; align-items:center; gap:8px; margin:8px 0}
@@ -227,15 +229,7 @@
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Header font</label>
-        <select id="header-font-select">
-          <option value="script-brush">Script (Brush)</option>
-          <option value="script-segoe">Script (Segoe)</option>
-          <option value="handwritten">Handwritten (Bradley)</option>
-          <option value="roundhand">Roundhand (Snell/Chancery)</option>
-          <option value="cursive">Generic Cursive</option>
-          <option value="sans">Sans (default)</option>
-          <option value="local-1">Local: Header Script (from fonts folder)</option>
-        </select>
+        <select id="header-font-select"></select>
       </div>
       <div class="row" style="justify-content:space-between; align-items:center">
         <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="auto-switch-share" checked /> Switch to Share tab after capture</label>
