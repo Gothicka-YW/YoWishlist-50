@@ -6,42 +6,47 @@
   <link rel="stylesheet" href="fonts/fonts.css" />
   <style>
       :root{
-        /* Fantasy palette defaults */
-        --bg: #000000;      /* background gradient start */
-        --bg-2: #2E0B3A;    /* background gradient end (violet mist) */
-        --fg: #EAE8EC;      /* text on dark */
-        --muted: #B8ADB8;   /* secondary text */
-        --surface: #1A001A; /* deep violet-black */
-        --surface-2: #240224; /* slightly lighter panel */
-        --border: #3A0D46;  /* dark amethyst outline */
-        --accent: #6B1F7B;  /* royal amethyst */
+        /* Default theme (purple → dark blue gradient) */
+        --bg: #6a11cb;       /* background gradient start (purple) */
+        --bg-2: #0b1e4e;     /* background gradient end (dark blue) */
+        --fg: #EAE8EC;       /* text on dark */
+        --muted: #B8ADB8;    /* secondary text */
+        --surface: #141329;  /* deep indigo panel */
+        --surface-2: #1b1a34;/* slightly lighter panel */
+        --border: #2e2a5a;   /* indigo outline */
+        --accent: #7a2df1;   /* vivid purple for accents */
         --accent-contrast: #ffffff;
         --btn-bg: var(--accent);
-        --btn-bg-hover: #5a1b68;
-        --accent-ring: rgba(107,31,123,.36);
-        --btn-border: #3c0f46;
-        --input-bg: #190018; /* inputs slightly offset from surface */
+        --btn-bg-hover: #6930d9;
+        --accent-ring: rgba(122,45,241,.36);
+        --btn-border: #1a1340;
+        --input-bg: #111029; /* inputs slightly offset from surface */
         --shadow: 0 10px 24px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.25);
         --highlight: #7A0E21; /* blood rose */
         --metallic: #C0BFC4; /* antique silver */
+        /* Button gradient stops for 3D effect */
+        --btn-grad-start: #8a41ff;  /* top */
+        --btn-grad-mid:   #6f34f0;  /* center */
+        --btn-grad-end:   #274cdb;  /* bottom (toward dark blue) */
       }
       /* Themes */
-      body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); }
-      body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; --accent-ring: rgba(233,30,99,.30); }
-      body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; --accent-ring: rgba(15,157,88,.28); }
-      body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; --accent-ring: rgba(0,0,0,.28); }
+  body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); --btn-grad-start:#5b97ff; --btn-grad-mid:#2f71ff; --btn-grad-end:#1c3aa9; }
+  body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; --accent-ring: rgba(233,30,99,.30); --btn-grad-start:#ff74a7; --btn-grad-mid:#e91e63; --btn-grad-end:#8c1440; }
+  body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; --accent-ring: rgba(15,157,88,.28); --btn-grad-start:#36da8f; --btn-grad-mid:#0f9d58; --btn-grad-end:#095a33; }
+  body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; --accent-ring: rgba(0,0,0,.28); --btn-grad-start:#333; --btn-grad-mid:#1a1a1a; --btn-grad-end:#000; }
 
       *{ box-sizing: border-box; }
-  html{ scrollbar-gutter: auto; }
+      html, body{ margin:0; overflow:hidden; }
       body{
         min-width:360px;
+        min-height: 320px;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
         color: var(--fg);
         /* Atmospheric background gradient */
         background: linear-gradient(180deg, var(--bg), var(--bg-2));
-        padding: 2px;
+  padding: 2px; /* small frame so rounded corners fully visible */
         /* Hide outer scrollbars so the inner card scrolls instead */
-        overflow: hidden;
+        overflow: hidden; /* ensure no outer scrollbars */
       }
       .app{
         position: relative;
@@ -52,24 +57,34 @@
           0 14px 30px rgba(0,0,0,.14),
           0 6px 16px rgba(0,0,0,.08),
           inset 0 0 0 1px var(--border);
-        padding: 12px;
+  padding: 12px 12px 16px 12px;
         overflow: hidden; /* ensure rounded corners feel real */
-        /* Scroll inside the rounded card */
-        max-height: calc(100vh - 4px);
+  /* Scroll inside the rounded card (let popup auto-size up to viewport) */
+  max-height: calc(100vh - 4px);
         overflow-y: auto;
+        /* Keep scrollbar space reserved to avoid width shifts when switching tabs */
+        scrollbar-gutter: stable both-edges;
+        overscroll-behavior: contain;
       }
-      /* Subtle, inside-the-card scrollbar to avoid drawing attention to window edges */
-      .app{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.25) transparent; }
-      .app::-webkit-scrollbar{ width: 10px; height: 10px; }
-      .app::-webkit-scrollbar-track{ background: transparent; }
+      /* Styled, inside-the-card scrollbar matching popup aesthetics */
+      .app{ scrollbar-width: thin; scrollbar-color: var(--btn-border) var(--surface-2); }
+      .app::-webkit-scrollbar{ width: 12px; height: 12px; }
+      .app::-webkit-scrollbar-track{
+        background: var(--surface-2);
+        border-radius: 12px;
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
       .app::-webkit-scrollbar-thumb{
-        background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.22));
-        border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
+        background: var(--accent);
+        border-radius: 12px;
+        border: 3px solid var(--surface-2); /* inset track gap */
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.20);
       }
+      .app::-webkit-scrollbar-thumb:hover{ background: var(--btn-bg-hover); }
   /* Header */
   .header-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
   h1{font-size:24px; margin:0}
-  #brand-logo{ width:28px; height:28px; object-fit:contain; border-radius:6px; border:1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,.25); background: var(--surface-2); }
+  /* brand logo removed */
   /* Header font options */
   body.header-font-sans h1{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:800; letter-spacing:.2px; }
   body.header-font-script-brush h1{ font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-weight:700; letter-spacing:.3px; }
@@ -88,17 +103,39 @@
       input[type="number"]{ width: 110px; }
       select{padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);}
       button{
-        background: var(--accent); color: var(--accent-contrast);
-        border:1px solid var(--btn-border); border-radius:12px; padding:10px 12px; cursor:pointer; font-weight:700; width:100%;
+        /* Smaller, more 3D buttons */
+        background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-mid) 55%, var(--btn-grad-end));
+        color: var(--accent-contrast);
+        border: 1px solid var(--btn-border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 700;
+        width: 100%;
+        cursor: pointer;
         box-shadow:
-          0 6px 14px rgba(0,0,0,.10),
-          0 2px 6px rgba(0,0,0,.08),
-          inset 0 -1px 0 rgba(0,0,0,.08),
-          inset 0 1px 0 rgba(255,255,255,.10);
-        transition: background .15s ease, transform .05s ease, box-shadow .15s ease, filter .15s ease;
+          0 8px 18px rgba(0,0,0,.18),            /* outer depth */
+          0 3px 8px rgba(0,0,0,.14),
+          inset 0 1px 0 rgba(255,255,255,.16),   /* top highlight */
+          inset 0 -1px 0 rgba(0,0,0,.20);        /* bottom edge */
+        transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
       }
-      button:hover{ background: var(--btn-bg-hover); filter: brightness(1.02); }
-      button:active{ transform: translateY(1px); box-shadow: 0 3px 8px rgba(0,0,0,.20), inset 0 1px 0 rgba(0,0,0,.12); }
+      button:hover{
+        filter: brightness(1.03) saturate(1.02);
+        box-shadow:
+          0 10px 22px rgba(0,0,0,.22),
+          0 4px 10px rgba(0,0,0,.16),
+          inset 0 1px 0 rgba(255,255,255,.20),
+          inset 0 -1px 0 rgba(0,0,0,.22);
+      }
+      button:active{
+        transform: translateY(1px);
+        box-shadow:
+          0 5px 12px rgba(0,0,0,.22),
+          0 2px 6px rgba(0,0,0,.18),
+          inset 0 2px 0 rgba(0,0,0,.24),
+          inset 0 -1px 0 rgba(255,255,255,.10);
+      }
       button:focus{ outline: none; }
       button:focus-visible{ box-shadow: 0 0 0 3px var(--accent-ring), 0 6px 14px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.08), inset 0 -1px 0 rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.10); }
       button[disabled]{ opacity:.65; cursor:not-allowed; filter: saturate(.9) brightness(.98); }
@@ -108,16 +145,15 @@
   #drop-zone.dragover{ border-color: var(--accent); color: var(--fg); background: rgba(0,0,0,0.02); }
       /* Tabs */
       #tabs{ gap:6px; margin-bottom:6px }
-  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); }
+  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:6px 9px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); font-size:13px; }
   #tabs .tab:hover{ filter: brightness(1.02); }
-  #tabs .tab.active{ background: var(--accent); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 4px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.10); }
+  #tabs .tab.active{ background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-end)); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 4px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.10); }
     </style>
   </head>
   <body>
     <div class="app">
       <div class="header-line">
         <h1>YoWishlist 50</h1>
-  <img id="brand-logo" src="icons/48.png" data-brand="icons/brand_raven.png" alt="Brand" title="YoWishlist 50"/>
       </div>
       <div class="row" id="tabs">
         <button id="tab-main" class="tab active" style="flex:1">Main</button>
@@ -248,7 +284,7 @@
         </p>
       </div>
     </div>
-      <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template.</p>
+  <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
     </div>
     <script src="popup.js"></script>
   </body>

@@ -22,7 +22,7 @@
     savedLast: 'yl50_saved_last',
     includeTitle: 'yl50_include_title'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'sans', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'main', yl50_include_title:true }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'main', yl50_include_title:true }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
     const warn = document.getElementById('qu-warning'); if(warn) warn.style.display = (res.yl50_imgbb_key ? 'none' : 'inline');
@@ -125,7 +125,45 @@
   $('#tab-main').addEventListener('click', () => showTab('main'));
   $('#tab-share').addEventListener('click', () => showTab('share'));
   if ($('#tab-settings')) $('#tab-settings').addEventListener('click', () => showTab('settings'));
-  chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> showTab(r[STORAGE_KEYS.lastTab] || 'main'));
+  chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> {
+    showTab(r[STORAGE_KEYS.lastTab] || 'main');
+    // After initial tab selection, size popup to the bottom of the Main tab
+    // so Main shows without inner scrolling; other tabs will scroll inside .app if needed.
+    const sizePopupToMain = () => {
+      const app = document.querySelector('.app');
+      const vm = document.getElementById('view-main');
+      const vs = document.getElementById('view-share');
+      const vset = document.getElementById('view-settings');
+      if (!app || !vm) return;
+      // Preserve current visibility and sizing
+      const prev = {
+        vm: vm.style.display,
+        vs: vs ? vs.style.display : undefined,
+        vset: vset ? vset.style.display : undefined,
+        height: app.style.height,
+        maxHeight: app.style.maxHeight
+      };
+      // Show Main only for measurement
+      vm.style.display = '';
+      if (vs) vs.style.display = 'none';
+      if (vset) vset.style.display = 'none';
+      // Temporarily remove max-height clamp so popup can expand while measuring
+      app.style.maxHeight = 'none';
+      app.style.height = 'auto';
+      // Force reflow then measure natural content height
+      void app.offsetHeight; // reflow
+      const desired = app.scrollHeight;
+      // Restore tab visibility
+      vm.style.display = prev.vm || '';
+      if (vs) vs.style.display = prev.vs ?? 'none';
+      if (vset) vset.style.display = prev.vset ?? 'none';
+      // Apply measured height so popup lengthens to fit Main; then re-apply max-height rule
+      app.style.height = desired + 'px';
+      app.style.maxHeight = prev.maxHeight || '';
+    };
+    // Run after layout settles; repeat once to catch async font/layout tweaks
+    requestAnimationFrame(()=>{ sizePopupToMain(); setTimeout(sizePopupToMain, 250); });
+  });
 
   // Persist imgbb key on change
   $('#imgbb-key').addEventListener('change', ()=>{
@@ -149,6 +187,8 @@
       try { chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
     });
   }
+
+  // Footer Privacy Policy now links directly via anchor in popup.html
 
   // Main: clear saved selectors
   if (document.getElementById('btn-clear-selectors')){
@@ -647,7 +687,13 @@
       const text = await res.text();
       const families = Array.from(text.matchAll(/@font-face\s*\{[^}]*font-family\s*:\s*(["'])?([^;"']+)\1?\s*;/gi)).map(m=>m[2]).filter(Boolean);
       const unique = Array.from(new Set(families));
-      populateFontSelect(unique, saved);
+      // Default to "Dancing Script" when no saved preference (or legacy 'sans')
+      let initial = saved;
+      if (!initial || initial === 'sans'){
+        if (unique.includes('Dancing Script')) initial = 'Dancing Script';
+        else initial = '';
+      }
+      populateFontSelect(unique, initial);
     } catch { populateFontSelect([], saved); }
   }
   function populateFontSelect(families, saved){
@@ -763,7 +809,7 @@
             [STORAGE_KEYS.scopeName]: scopeName
           }, ()=>{
             applyTheme(theme); if ($('#theme-select')) $('#theme-select').value = theme;
-            applyHeaderFont(headerFont); if ($('#header-font-select')) $('#header-font-select').value = headerFont;
+            applyCustomHeaderFont(headerFont); if ($('#header-font-select')) $('#header-font-select').value = headerFont;
             if ($('#auto-switch-share')) $('#auto-switch-share').checked = auto;
             if ($('#limit')) $('#limit').value = limit;
             if ($('#scope-name')) $('#scope-name').value = scopeName;

@@ -1,0 +1,61 @@
+YoWishlist 50 — How to Use
+
+1) If downloading from GitHub: 
+- Install and open the popup
+- Load the extension in Chrome (Developer mode → Load unpacked → select this folder).
+- Click the YoWishlist 50 icon to open the popup.
+
+If installed from Chrome Web Store, you are all set.
+
+2) Main tab
+- Limit: Set how many items to include (e.g., 50).
+- Scope (optional): Type the list title as shown on yoworld.info (e.g., “My Wishlist”) so the tool targets that section.
+- Preview first N: Highlights the first N cards in the target section.
+- Export first N (site): Performs an in-page export using the site’s layout.
+- Export (crop): Captures and stitches a clean image of the selected grid without scroll artifacts.
+- Restore list: Reverts temporary page changes made by Preview/Export.
+- Pick card selector: Choose a single item tile to help the tool detect your grid if auto-detect misses.
+- Reset selectors: Clears stored selectors so you can re-pick.
+- Open template page: Opens https://yoworld.info/template in a tab.
+
+Tips:
+- Keep the template page visible during Crop captures.
+- If detection misses your grid, use Pick card selector on a single tile, then retry.
+- Press Enter in the Scope field to scroll to and highlight the matching section.
+
+3) Share tab (save, upload, and share)
+- Saved: Store entries by title (Save/Rename/Delete). The list remembers your last selection.
+- Load image: Drag & drop, paste (Ctrl+V), or load a file to stage an image.
+- Upload: Sends the staged image to a host and returns a URL (imgbb with your key → postimages attempt → catbox fallback).
+- Image URL: Copy the URL for sharing.
+- Forum link (BBCode): Copy ready-to-paste forum code. Use the “Include title” checkbox to toggle the [b]Title[/b] prefix.
+
+Save Title behavior:
+- Saving an existing title asks to update the entry; choosing Yes replaces the stored image (auto-uploads the staged image with fallbacks if needed).
+
+4) Settings tab
+- imgbb API Key: Paste and save; Test key checks connectivity (no upload).
+- Max saved entries: Choose 10/25/50/100/Unlimited.
+- Theme: Change the color theme; default uses a purple → dark blue gradient.
+- Header font: Choose a local font from fonts/fonts.css. Default is “Dancing Script” if available.
+- Switch to Share after capture: Jump to Share automatically after export.
+- Reset settings: Clears settings (not your Saved entries).
+- Import/Export JSON: Back up or restore saved entries and settings (keys excluded).
+- Privacy Policy: Link in the footer opens the policy on GitHub.
+
+5) Keyboard and workflow
+- Enter in Scope: quickly finds/highlights the target section.
+- After export (crop), switch to Share to upload and share.
+
+6) Privacy and data
+- No analytics or tracking.
+- Data stored in Chrome extension storage (sync) under your account.
+- Uploads only occur when you click Upload; third-party hosts have their own policies.
+
+Troubleshooting
+- If nothing happens, make sure your active tab is on yoworld.info/template.
+- If detection fails, use Pick card selector on a single item tile, then Preview/Export again.
+- For API issues, verify your imgbb key and internet connectivity.
+
+Support
+- Open an issue on GitHub: https://github.com/Gothicka-YW/YoWishlist-50

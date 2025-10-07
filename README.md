@@ -1,6 +1,15 @@
 # YoWishlist-50
 Wish List importer for use on YoWorld Forums.
 
+## Privacy Policy
+This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
+- PRIVACY_POLICY: https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt
+
+## What’s new (v1.4.2)
+- Visual: Default theme now uses a purple → dark blue background gradient; buttons are smaller with a stronger 3D gradient look; active tab matches button style.
+- Fonts: Default header font now prefers “Dancing Script” (local) when no prior preference exists; Settings dropdown lists local fonts from `fonts/fonts.css`.
+- Privacy: Added PRIVACY_POLICY.txt and linked it from the popup footer and README.
+
 ## What’s new (v1.4.1)
 - Cropped export: fixed occasional cutoff/transparent bottom strip via bottom-aligned last pass, extra overlap, overscan + final crop, and coordinate clamps; asymmetric crop padding (top 6px; right/bottom/left 12px).
 - Stability: restored clean content-script message handlers after a prior crop edit caused syntax errors.

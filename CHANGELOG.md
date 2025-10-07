@@ -1,5 +1,11 @@
 # YoWishlist-50 Changelog
 
+## 1.4.2 - 2025-10-07
+- Visual: Buttons are smaller with a 3D gradient style; active tab uses a matching gradient. Default theme switched to a purple → dark blue background gradient with tuned surface/border colors.
+- Fonts: Default header font now prefers “Dancing Script” when no previous selection exists (falls back to sans if not available). Local font list is parsed from `fonts/fonts.css`.
+- Privacy: Added `PRIVACY_POLICY.txt`, linked from README and as a footer link in the popup Settings view.
+- Layout: Popup auto-sizes to fit the Main tab height on first render; other tabs scroll inside the rounded card. Moved Privacy Policy link to the footer text.
+
 ## 1.4.1 - 2025-10-06
 - Fix: Cropped export could cut off the final row and render a transparent band at the bottom. The stitcher now bottom-aligns the last pass, increases overlap, uses overscan+final crop, and clamps coordinates to eliminate gaps.
 - Fix: Restored clean message handlers in content script after a prior crop-tightening edit introduced syntax errors; stabilized preview/export messaging.

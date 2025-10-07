@@ -1,0 +1,60 @@
+YoWishlist 50 — Privacy Policy
+Effective date: October 7, 2025
+
+Who we are
+YoWishlist 50 is a free, open‑source Chrome extension that helps YoWorld forum users collect and share wish lists. The project is maintained publicly on GitHub at:
+  https://github.com/Gothicka-YW/YoWishlist-50
+
+This policy explains what data the extension accesses, stores, or transmits, and for what purpose.
+
+What data the extension processes
+1) On-device (default behavior)
+   - Saved items: The “Saved” list stores a title and an image URL you chose. This is kept in Chrome’s extension storage (chrome.storage.sync) under your Google account and may sync across your Chrome profiles if sync is enabled.
+   - Settings: The extension stores options such as limit, theme, header font, include-title toggle, and your last opened tab. If you provide an imgbb API key, it is stored in chrome.storage.sync as well.
+   - Temporary images: Images that you paste, drop, or load into the Share tab are processed locally in the popup and are not transmitted anywhere unless you explicitly choose to upload.
+
+2) Page access (yoworld.info only)
+   - The content script reads the structure of pages on yoworld.info to detect and list items for preview/export. The extension does not collect personal information from these pages and does not transmit page content to any server.
+   - When you trigger a cropped export, the extension captures and stitches screenshots of the current tab locally to create an image for download. These captures are used only to build your export and are not sent anywhere by the extension.
+
+Uploads to third‑party services (only when you click “Upload”)
+If you press Upload in the Share tab, the image you selected is sent to an external hosting provider to obtain a shareable URL. The extension may use:
+   - imgbb.com (requires your API key)
+   - catbox.moe (fallback)
+   - postimages.org (host permission present; best‑effort usage)
+Your use of these services is governed by their own terms and privacy policies. The extension does not control what those services do with your uploaded image. No other data (such as your saved entries or settings) is sent to these services.
+
+What the extension does NOT do
+   - No analytics, no advertising, no tracking beacons.
+   - No sale or sharing of personal data.
+   - No background transmission of images or page content without your action.
+   - No reading of your clipboard; clipboardWrite permission is used only to copy text (URL/BBCode) that you request via a button.
+
+Permissions explained
+   - storage: Save your settings and Saved entries in chrome.storage (sync or local per Chrome defaults).
+   - activeTab, tabs: Interact with your active yoworld.info tab (e.g., inject scripts, measure page layouts, and support capture for export on demand).
+   - scripting: Inject the content script when you use the tool on yoworld.info pages.
+   - downloads: Save your exported images to your computer when requested.
+   - clipboardWrite: Copy the URL and forum BBCode to your clipboard when you click the relevant buttons.
+   - host_permissions: Access only the listed domains (yoworld.info, imgbb.com, postimages.org, catbox.moe) for their specific features.
+
+Data retention and control
+   - In-extension data (Saved entries, settings, API keys) persists until you remove it, reset settings, or uninstall the extension. You can:
+       • Delete Saved entries individually from the Share tab.
+       • Reset settings from the Settings tab.
+       • Remove the extension from Chrome to delete its local data.
+   - If Chrome Sync is enabled, some settings may sync across devices under your Google account per Chrome’s behavior.
+   - Images you upload to third‑party hosts are retained by those services according to their policies. To remove an uploaded image, use controls on the hosting site; the extension cannot delete third‑party hosted images on your behalf.
+
+Security
+   - The extension has no backend server and does not transmit your settings to us. Data such as your imgbb API key is stored in Chrome’s extension storage and subject to Chrome’s security model. Protect your computer and browser profile to keep your data safe.
+
+Children’s privacy
+   - This tool is not directed to children under 13 and does not knowingly collect personal information from children.
+
+Changes to this policy
+   - We may update this policy from time to time. The latest version will be committed to the GitHub repository with an updated effective date.
+
+Contact
+If you have questions or requests regarding this policy, please open an issue on the project’s GitHub repository:
+  https://github.com/Gothicka-YW/YoWishlist-50
