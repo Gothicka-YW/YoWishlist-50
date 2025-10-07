@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YoWishlist 50",
-  "version": "1.2",
+  "version": "1.4.1",
   "description": "Export the first N items on yoworld.info/template. Cropped export stitches full height without scroll artifacts. Fan Tool",
   "permissions": [
     "storage",
@@ -13,7 +13,10 @@
   ],
   "host_permissions": [
     "*://*.yoworld.info/*",
-    "https://api.imgbb.com/*"
+    "https://api.imgbb.com/*",
+    "https://catbox.moe/*",
+    "https://postimages.org/*",
+    "https://i.postimg.cc/*"
   ],
   "background": {
     "service_worker": "background.js"

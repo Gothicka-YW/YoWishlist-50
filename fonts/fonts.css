@@ -1,0 +1,13 @@
+/* Local fonts for YoWishlist-50 (MV3-safe)
+   Drop .woff2 files in this folder and declare them here.
+   Example block:
+
+@font-face {
+  font-family: "Header Script";
+  src: url("./HeaderScript-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+*/

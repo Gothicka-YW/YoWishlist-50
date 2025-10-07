@@ -61,7 +61,12 @@ function __resolveContainerElement__(container) {
   function findSectionContainers(){ function lower(n){ return (n && (n.textContent||'')).trim().toLowerCase(); } const heads=Array.from(document.querySelectorAll('h1,h2,h3,.section-title,[class*="title"],[class*="header"]')); function containerAfter(head){ if(!head) return null; let s=head.nextElementSibling; for(let i=0;i<6 && s;i++,s=s.nextElementSibling){ const imgs=s.querySelectorAll ? s.querySelectorAll('img') : []; if (imgs.length>=4) return s; } return head.parentElement; } let wishHead=heads.find(h=>/wish[\s-]?list|wishlist|wish-list/i.test(lower(h))); let saleHead=heads.find(h=>/sale(\s|-)items|^sale$/i.test(lower(h))); return { wishHead, saleHead, wish: containerAfter(wishHead), sale: containerAfter(saleHead) }; }
   function sectionRootFor(el){ if(!el||el.nodeType!==1) return {root:document, head:null, name:'unknown'}; const {wish,sale,wishHead,saleHead}=findSectionContainers(); if(wish&&wish.contains(el)) return {root:wish, head:wishHead, name:'wish'}; if(sale&&sale.contains(el)) return {root:sale, head:saleHead, name:'sale'}; let cur=el; for(let hops=0;cur&&hops<10;hops++,cur=cur.parentElement){ if(wish&&wish.contains(cur)) return {root:wish, head:wishHead, name:'wish'}; if(sale&&sale.contains(cur)) return {root:sale, head:saleHead, name:'sale'}; } return {root:el, head:null, name:'unknown'}; }
   function pickTargetSection(scope, container){
-    // If user provided a specific scopeName, try to find matching label/input/header first
+    // If a specific container (from picker) is provided, prefer that first
+    if (container && container !== document){
+      const info = sectionRootFor(container);
+      if (info && info.root) return info;
+    }
+    // Otherwise, if a scopeName is provided, try to find matching label/input/header
     if (state.scopeName){
       const name = String(state.scopeName).trim().toLowerCase();
       if (name){
@@ -96,7 +101,18 @@ function __resolveContainerElement__(container) {
   }
 
   const _removedStacks = [];
-  function removeOtherSection(selectedRoot){ const {wish,sale,wishHead,saleHead}=findSectionContainers(); const removed=[]; function rm(node){ if(node && node.parentNode){ removed.push({node, parent: node.parentNode, next: node.nextSibling}); node.parentNode.removeChild(node); } } if(wish&&sale){ if(selectedRoot===wish){ rm(sale); rm(saleHead); } else if(selectedRoot===sale){ rm(wish); rm(wishHead); } } _removedStacks.push(removed); return removed.length; }
+  function removeOtherSection(selectedRoot){
+    const {wish,sale,wishHead,saleHead}=findSectionContainers();
+    const removed=[];
+    function rm(node){ if(node && node.parentNode){ removed.push({node, parent: node.parentNode, next: node.nextSibling}); node.parentNode.removeChild(node); } }
+    if (wish && sale){
+      // Remove the opposite section by containment or equality
+      if (selectedRoot === wish || (wish && selectedRoot && wish.contains(selectedRoot))){ rm(sale); rm(saleHead); }
+      else if (selectedRoot === sale || (sale && selectedRoot && sale.contains(selectedRoot))){ rm(wish); rm(wishHead); }
+    }
+    _removedStacks.push(removed);
+    return removed.length;
+  }
   function restoreRemovedSections(){ const removed=_removedStacks.pop()||[]; for(const r of removed){ try{ if(r.next && r.parent.contains(r.next)) r.parent.insertBefore(r.node, r.next); else r.parent.appendChild(r.node);}catch{} } }
 
   // Cropped, stitched export
@@ -114,26 +130,41 @@ function __resolveContainerElement__(container) {
   // keep the rest of the original logic if present below this header.
 const docTop = rect.top + window.scrollY;
     const docLeft = rect.left + window.scrollX;
-    const top = Math.max(0, Math.floor(docTop - padding));
-    const left = Math.max(0, Math.floor(docLeft - padding));
-    const totalW = Math.ceil(rect.width + padding*2);
-    const totalH = Math.ceil(rect.height + padding*2);
+    // Support numeric padding or an object: { top, right, bottom, left }
+    const pad = (typeof padding === 'object' && padding) ? padding : { top: padding, right: padding, bottom: padding, left: padding };
+    const pTop = Math.max(0, Math.floor(pad.top||0));
+    const pLeft = Math.max(0, Math.floor(pad.left||0));
+    const pRight = Math.max(0, Math.floor(pad.right||0));
+    const pBottom = Math.max(0, Math.floor(pad.bottom||0));
+    const top = Math.max(0, Math.floor(docTop - pTop));
+    const left = Math.max(0, Math.floor(docLeft - pLeft));
+    const totalW = Math.ceil(rect.width + pLeft + pRight);
+    const totalH = Math.ceil(rect.height + pTop + pBottom);
 
     const prevScrollX = window.scrollX, prevScrollY = window.scrollY;
     const prevBehavior = document.documentElement.style.scrollBehavior || '';
     document.documentElement.style.scrollBehavior = 'auto';
 
-    const viewH = window.innerHeight;
-    const overlap = 80;
-    const stride = Math.max(50, viewH - overlap);
+  const viewH = window.innerHeight;
+  const overlap = 120; // larger overlap to reduce seam/gap risk
+  const stride = Math.max(50, viewH - overlap);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.ceil(totalW * dpr);
-    canvas.height = Math.ceil(totalH * dpr);
-    const ctx = canvas.getContext('2d');
+  // Work canvas with a small bottom overscan to ensure final rows are fully covered
+  const targetW = Math.ceil(totalW * dpr);
+  const targetH = Math.ceil(totalH * dpr);
+  const overscanPx = Math.ceil(64 * dpr);
+  const workH = targetH + overscanPx;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = workH;
+  const ctx = canvas.getContext('2d');
 
     for (let y = top; y < top + totalH; y += stride){
-      window.scrollTo(0, y);
+      const bottom = top + totalH;
+      const isLast = (y + stride >= bottom);
+      const targetScrollY = isLast ? Math.max(0, bottom - window.innerHeight) : y;
+      window.scrollTo(0, targetScrollY);
       await new Promise(r => setTimeout(r, 380));
       const reply = await new Promise(res => chrome.runtime.sendMessage({ type:'yl50-capture' }, r => res(r)));
       if (!reply || !reply.ok || !reply.dataUrl) continue;
@@ -146,11 +177,13 @@ const docTop = rect.top + window.scrollY;
       const visibleH = Math.max(0, sliceBottom - sliceTop);
       if (visibleH <= 0) continue;
 
-      const sx = Math.max(0, Math.floor((left - window.scrollX) * dpr));
-      const sy = Math.max(0, Math.floor((sliceTop - viewportTop) * dpr));
-      const sw = Math.min(Math.floor(totalW * dpr), img.width - sx);
-      const sh = Math.min(Math.floor(visibleH * dpr), img.height - sy);
-      const dy = Math.floor((sliceTop - top) * dpr);
+      const sx = Math.max(0, Math.round((left - window.scrollX) * dpr));
+      const sy = Math.max(0, Math.round((sliceTop - viewportTop) * dpr));
+      const sw = Math.min(Math.ceil(totalW * dpr), img.width - sx);
+      let sh = Math.min(Math.round(visibleH * dpr), img.height - sy);
+      const dy = Math.max(0, Math.round((sliceTop - top) * dpr));
+      // Clamp to work canvas height so we never write past the buffer
+      if (dy + sh > workH) sh = Math.max(0, workH - dy);
 
       try { ctx.drawImage(img, sx, sy, sw, sh, 0, dy, sw, sh); } catch(e){}
     }
@@ -158,43 +191,103 @@ const docTop = rect.top + window.scrollY;
     window.scrollTo(prevScrollX, prevScrollY);
     document.documentElement.style.scrollBehavior = prevBehavior;
 
+    // Crop work canvas to the exact target size to remove overscan area
+    if (workH !== targetH) {
+      const out = document.createElement('canvas');
+      out.width = targetW;
+      out.height = targetH;
+      const octx = out.getContext('2d');
+      try { octx.drawImage(canvas, 0, 0, targetW, targetH, 0, 0, targetW, targetH); } catch(e){}
+      return out.toDataURL('image/png');
+    }
     return canvas.toDataURL('image/png');
   }
 
   // DOM ops
   function getContainer(){ if (state.containerSel){ try { const c=document.querySelector(state.containerSel); if(c) return c; } catch{} } return document; }
-  function findCards(){
-    const container = getContainer() || document;
-    if (state.cardSel){ try { const arr = Array.from(container.querySelectorAll(state.cardSel)).filter(n=>n.offsetParent!==null); if (arr.length) return arr; } catch{} }
-    if (state.selectorHint){ try { const hinted=document.querySelector(state.selectorHint); const card=closestCard(hinted); if(card){ const sel=tagAndClasses(card); const arr=Array.from(container.querySelectorAll(sel)).filter(n=>n.offsetParent!==null); if(arr.length) return arr; } } catch{} }
-    const list=['[data-item]','.template-item','.item','.card','.tile','.grid > div','.row > [class*="col"]','ul > li','ol > li','[class*="col"]'];
-    const imgs = Array.from(container.querySelectorAll('img')); const set = new Set();
-    imgs.forEach(img=>{ const parent=img.closest(list.join(',')); if(parent && parent.offsetParent!==null) set.add(parent); });
-    return Array.from(set);
-    if (state.scopeName){
-      const name = String(state.scopeName).trim().toLowerCase();
-      if (name){
-        const heads = Array.from(document.querySelectorAll('h1,h2,h3,.section-title,[class*="title"],[class*="header"]'));
-        const labelInput = Array.from(document.querySelectorAll('.selling-label-input, input[type="text"][class*="label"], [class*="label"] input[type="text"]'));
-        const pool = [...labelInput, ...heads];
-        const match = pool.find(el => {
-          try{
-            const val = (el.value||el.placeholder||'').toString().trim().toLowerCase();
-            const txt = (el.textContent||'').toString().trim().toLowerCase();
-            return (val && val.includes(name)) || (txt && txt.includes(name));
-          }catch{return false;}
-        });
-        if (match){
-          let root = match.nextElementSibling; let hops=0;
-          while(root && hops<8 && (!root.querySelectorAll || root.querySelectorAll('img').length<4)){ root = root.nextElementSibling; hops++; }
-          if (!root) root = match.parentElement || document;
-          return { root, head: match, name: 'named' };
-        }
-      }
+  function findCards(rootOverride){
+    const container = rootOverride || getContainer() || document;
+    // If a specific card selector is saved, honor it strictly within the container
+    if (state.cardSel){
+      try {
+        const arr = Array.from(container.querySelectorAll(state.cardSel)).filter(n=>n.offsetParent!==null);
+        if (arr.length) return arr;
+      } catch{}
     }
+    // Try hint → closest card → derive selector within container
+    if (state.selectorHint){
+      try {
+        const hinted = document.querySelector(state.selectorHint);
+        const card = closestCard(hinted);
+        if(card){
+          const sel = tagAndClasses(card);
+          const arr = Array.from(container.querySelectorAll(sel)).filter(n=>n.offsetParent!==null);
+          if(arr.length) return arr;
+        }
+      } catch{}
+    }
+    // Generic patterns within the container
+    const list=['[data-item]','.template-item','.item','.card','.tile','.grid > div','.row > [class*="col"]','ul > li','ol > li','[class*="col"]'];
+    const imgs = Array.from(container.querySelectorAll('img'));
+    const set = new Set();
+    imgs.forEach(img=>{ const parent=img.closest(list.join(',')); if(parent && parent.offsetParent!==null && container.contains(parent)) set.add(parent); });
+    const fallback = Array.from(set);
+    if (fallback.length) return fallback;
+    // Last resort: take visible direct children grid items
+    const gridish = Array.from(container.querySelectorAll('*')).filter(el=>{
+      const d = getComputedStyle(el);
+      return (d.display.includes('grid') || d.display.includes('flex')) && el.children && el.children.length>=3;
+    });
+    for (const g of gridish){
+      const kids = Array.from(g.children).filter(n=> n.offsetParent!==null);
+      if (kids.length>=3) return kids;
+    }
+    return [];
   }
-  function restore(){ if (Array.isArray(state.removed) && state.removed.length){ for (const r of state.removed){ try{ if(r.next && r.parent.contains(r.next)) r.parent.insertBefore(r.node, r.next); else r.parent.appendChild(r.node); }catch{} } state.removed=[]; } Array.from(document.querySelectorAll('[yl50-hidden="true"]')).forEach(n=>n.removeAttribute('yl50-hidden')); }
-  function removeBeyond(limit){ restore(); const cards=findCards(); if(!cards.length) return {ok:false,count:0,total:0,reason:'no-cards'}; for(let i=limit;i<cards.length;i++){ const n=cards[i]; state.removed.push({node:n,parent:n.parentNode,next:n.nextSibling}); if(n&&n.parentNode) n.parentNode.removeChild(n);} return {ok:true,count:Math.min(limit,cards.length),total:cards.length}; }
+  function restore(){
+    if (Array.isArray(state.removed) && state.removed.length){
+      for (const r of state.removed){
+        try{
+          if(r.next && r.parent.contains(r.next)) r.parent.insertBefore(r.node, r.next);
+          else r.parent.appendChild(r.node);
+        }catch{}
+      }
+      state.removed=[];
+    }
+    document.querySelectorAll('[yl50-hidden="true"]').forEach(n=> n.removeAttribute('yl50-hidden'));
+  }
+  function removeBeyond(limit, root, skipRestore=false){
+    if (!skipRestore) restore();
+    const cards=findCards(root);
+    if(!cards.length) return {ok:false,count:0,total:0,reason:'no-cards'};
+    for(let i=limit;i<cards.length;i++){
+      const n=cards[i];
+      state.removed.push({node:n,parent:n.parentNode,next:n.nextSibling});
+      if(n&&n.parentNode) n.parentNode.removeChild(n);
+    }
+    return {ok:true,count:Math.min(limit,cards.length),total:cards.length};
+  }
+
+  // Remove all cards before the clicked/ hinted card to start the list at the user's pick
+  function trimStartFromHint(root){
+    try{
+      if (!state.selectorHint) return 0;
+      const hinted = document.querySelector(state.selectorHint);
+      if (!hinted) return 0;
+      const cards = findCards(root);
+      if (!cards.length) return 0;
+      const idx = cards.findIndex(c => c.contains(hinted));
+      if (idx > 0){
+        for (let i=0; i<idx; i++){
+          const n = cards[i];
+          state.removed.push({node:n,parent:n.parentNode,next:n.nextSibling});
+          if(n&&n.parentNode) n.parentNode.removeChild(n);
+        }
+        return idx;
+      }
+      return 0;
+    } catch { return 0; }
+  }
   function clickDownload(){ const labels=['download template','download','export','save image','save','png','jpg']; const btns=Array.from(document.querySelectorAll('button, a, [role="button"], input[type="button"], input[type="submit"]')); for(const b of btns){ const t=(b.textContent||b.value||'').trim().toLowerCase(); if(t && labels.some(l=>t.includes(l))){ b.click(); return true; } } const all=Array.from(document.querySelectorAll('*')); for(const el of all){ const t=(el.getAttribute('title')||el.getAttribute('aria-label')||'').toLowerCase(); if(t && ['download','export','save'].some(l=>t.includes(l))){ el.click(); return true; } } return false; }
 
   // Picker
@@ -224,12 +317,102 @@ const docTop = rect.top + window.scrollY;
         yl50_card: state.cardSel,
         yl50_selectors: state.selectorHint
       });
-      sendResponse && sendResponse({ ok:true }); return true; }
-    if (msg.type === 'yl50-preview'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok) toast('Could not detect item grid — use Pick card selector on the desired section.'); else toast(`Preview: showing first ${res.count} of ${res.total}`); sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total }); return true; }
-    if (msg.type === 'yl50-export'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; } forceWhiteBackground(true); const clicked=clickDownload(); if(!clicked) toast('Download button not found — click it manually.'); setTimeout(()=>{ forceWhiteBackground(false); restore(); restoreRemovedSections(); }, 1400); sendResponse && sendResponse({ ok:true, count: res.count, clicked }); return true; }
-    if (msg.type === 'yl50-export-crop'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; } forceWhiteBackground(true); setTimeout(async ()=>{ const dataUrl = await captureStitchedTo(rootInfo.root, 22); forceWhiteBackground(false); if(dataUrl){ chrome.runtime.sendMessage({ type:'yl50-download', dataUrl, filename:'yowishlist50_cropped.png' }, ()=>{ restore(); restoreRemovedSections(); }); } else { restore(); restoreRemovedSections(); toast('Crop capture failed — try normal Export.'); } }, 250); sendResponse && sendResponse({ ok:true, cropped:true }); return true; }
-  if (msg.type === 'yl50-export-crop-data'){ ensurePreviewOn(); const container=getContainer(); const rootInfo=pickTargetSection(state.which, container); removeOtherSection(rootInfo.root); const res=removeBeyond(state.limit); if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; } forceWhiteBackground(true); setTimeout(async ()=>{ try { const dataUrl = await captureStitchedTo(rootInfo.root, 22); forceWhiteBackground(false); restore(); restoreRemovedSections(); if(dataUrl){ sendResponse && sendResponse({ ok:true, dataUrl }); } else { toast('Crop capture failed — try normal Export.'); sendResponse && sendResponse({ ok:false }); } } catch(e){ forceWhiteBackground(false); restore(); restoreRemovedSections(); sendResponse && sendResponse({ ok:false, error: String(e&&e.message||e) }); } }, 250); return true; }
+      sendResponse && sendResponse({ ok:true });
+      return true;
+    }
+    if (msg.type === 'yl50-preview'){
+      ensurePreviewOn();
+      const container=getContainer();
+      const rootInfo=pickTargetSection(state.which, container);
+      removeOtherSection(rootInfo.root);
+      // Hide items above the picked tile, then remove beyond N
+      trimStartFromHint(rootInfo.root);
+      const res=removeBeyond(state.limit, rootInfo.root, true);
+      if(!res.ok) toast('Could not detect item grid — pick a tile again or scroll the section into view, then retry.');
+      else toast(`Preview: showing first ${res.count} of ${res.total}`);
+      sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total });
+      return true;
+    }
+    if (msg.type === 'yl50-export'){
+      ensurePreviewOn();
+      const container=getContainer();
+      const rootInfo=pickTargetSection(state.which, container);
+      removeOtherSection(rootInfo.root);
+      trimStartFromHint(rootInfo.root);
+      const res=removeBeyond(state.limit, rootInfo.root, true);
+      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+      forceWhiteBackground(true);
+      const clicked=clickDownload(); if(!clicked) toast('Download button not found — click it manually.');
+      setTimeout(()=>{ forceWhiteBackground(false); restore(); restoreRemovedSections(); }, 1400);
+      sendResponse && sendResponse({ ok:true, count: res.count, clicked });
+      return true;
+    }
+    if (msg.type === 'yl50-export-crop'){
+      ensurePreviewOn();
+      const container=getContainer();
+      const rootInfo=pickTargetSection(state.which, container);
+      removeOtherSection(rootInfo.root);
+      trimStartFromHint(rootInfo.root);
+      const res=removeBeyond(state.limit, rootInfo.root, true);
+      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+      forceWhiteBackground(true);
+      setTimeout(async ()=>{
+        const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
+        forceWhiteBackground(false);
+        if(dataUrl){ chrome.runtime.sendMessage({ type:'yl50-download', dataUrl, filename:'yowishlist50_cropped.png' }, ()=>{ restore(); restoreRemovedSections(); }); }
+        else { restore(); restoreRemovedSections(); toast('Crop capture failed — try normal Export.'); }
+      }, 250);
+      sendResponse && sendResponse({ ok:true, cropped:true });
+      return true;
+    }
+    if (msg.type === 'yl50-export-crop-data'){
+      ensurePreviewOn();
+      const container=getContainer();
+      const rootInfo=pickTargetSection(state.which, container);
+      removeOtherSection(rootInfo.root);
+      trimStartFromHint(rootInfo.root);
+      const res=removeBeyond(state.limit, rootInfo.root, true);
+      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+      forceWhiteBackground(true);
+      setTimeout(async ()=>{
+        try {
+          const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
+          forceWhiteBackground(false);
+          restore(); restoreRemovedSections();
+          if(dataUrl){ sendResponse && sendResponse({ ok:true, dataUrl }); }
+          else { toast('Crop capture failed — try normal Export.'); sendResponse && sendResponse({ ok:false }); }
+        } catch(e){
+          forceWhiteBackground(false);
+          restore(); restoreRemovedSections();
+          sendResponse && sendResponse({ ok:false, error: String(e&&e.message||e) });
+        }
+      }, 250);
+      return true;
+    }
     if (msg.type === 'yl50-restore'){ restore(); restoreRemovedSections(); toast('List restored'); sendResponse && sendResponse({ ok:true }); return true; }
     if (msg.type === 'yl50-pick'){ startPicker(); sendResponse && sendResponse({ ok:true }); return true; }
+    if (msg.type === 'yl50-find-scope'){
+      // Try to resolve the target root by scopeName, then scroll and highlight it
+      try{
+        const container=getContainer();
+        const rootInfo=pickTargetSection(state.which, container);
+        const root = rootInfo && rootInfo.root;
+        if (root && root.scrollIntoView){
+          root.scrollIntoView({ behavior:'smooth', block:'start' });
+          // Brief highlight
+          const hl = document.createElement('div');
+          const r = root.getBoundingClientRect();
+          Object.assign(hl.style, { position:'fixed', left:(r.left-6)+'px', top:(r.top-6)+'px', width:(r.width+12)+'px', height:(r.height+12)+'px', border:'3px solid #2f71ff', borderRadius:'12px', pointerEvents:'none', zIndex:2147483646, boxSizing:'border-box' });
+          document.body.appendChild(hl);
+          setTimeout(()=>{ try{ hl.remove(); }catch{} }, 1200);
+          toast('Focused on the section matching your Scope.');
+          sendResponse && sendResponse({ ok:true });
+        } else {
+          toast('No section matched your Scope — try Pick card selector.');
+          sendResponse && sendResponse({ ok:false });
+        }
+      }catch(e){ toast('Could not focus on scope: '+(e&&e.message||e)); sendResponse && sendResponse({ ok:false, error:String(e&&e.message||e) }); }
+      return true;
+    }
   });
 })();

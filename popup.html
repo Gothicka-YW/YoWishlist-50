@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8"/>
     <title>YoWishlist 50</title>
-    <style>
+  <link rel="stylesheet" href="fonts/fonts.css" />
+  <style>
       :root{
         /* Fantasy palette defaults */
         --bg: #000000;      /* background gradient start */
@@ -65,7 +66,19 @@
         background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.22));
         border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
       }
-      h1{font-size:16px; margin:0 0 8px}
+  /* Header */
+  .header-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  h1{font-size:24px; margin:0}
+  #brand-logo{ width:28px; height:28px; object-fit:contain; border-radius:6px; border:1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,.25); background: var(--surface-2); }
+  /* Header font options */
+  body.header-font-sans h1{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:800; letter-spacing:.2px; }
+  body.header-font-script-brush h1{ font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-weight:700; letter-spacing:.3px; }
+  body.header-font-script-segoe h1{ font-family: "Segoe Script", "Lucida Handwriting", cursive; font-weight:700; letter-spacing:.3px; }
+  body.header-font-handwritten h1{ font-family: "Bradley Hand", "Segoe Script", "Lucida Handwriting", cursive; font-weight:700; letter-spacing:.3px; }
+  body.header-font-roundhand h1{ font-family: "Snell Roundhand", "Apple Chancery", "Segoe Script", cursive; font-weight:700; letter-spacing:.3px; }
+  body.header-font-cursive h1{ font-family: cursive; font-weight:700; letter-spacing:.3px; }
+  /* Example class for a local font family declared in fonts/fonts.css */
+  body.header-font-local-1 h1{ font-family: "Header Script", "Segoe Script", cursive; font-weight:700; letter-spacing:.3px; }
       .row{display:flex; align-items:center; gap:8px; margin:8px 0}
       input[type="number"], input[type="text"], textarea{
         padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);
@@ -100,11 +113,14 @@
   </head>
   <body>
     <div class="app">
-      <h1>YoWishlist 50</h1>
+      <div class="header-line">
+        <h1>YoWishlist 50</h1>
+  <img id="brand-logo" src="icons/48.png" data-brand="icons/brand_raven.png" alt="Brand" title="YoWishlist 50"/>
+      </div>
       <div class="row" id="tabs">
         <button id="tab-main" class="tab active" style="flex:1">Main</button>
         <button id="tab-share" class="tab" style="flex:1">Share</button>
-        <button id="tab-resources" class="tab" style="flex:1">Resources</button>
+        <button id="tab-settings" class="tab" style="flex:1">Settings</button>
       </div>
     <div id="view-main">
     <div class="row">
@@ -116,43 +132,46 @@
   <input id="scope-name" placeholder="e.g., My Wishlist, Halloween Sale" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
       <span class="muted">If blank, the tool uses your picked selector or auto-detects.</span>
     </div>
-    <div class="row"><button id="btn-preview">Preview trim</button></div>
+    <div class="row"><button id="btn-preview">Preview first N</button></div>
     <div class="row"><button id="btn-export">Export first N (site)</button></div>
     <div class="row"><button id="btn-export-crop">Export (crop)</button></div>
     <div class="row"><button id="btn-restore">Restore list</button></div>
-    <div class="row"><button id="btn-pick">Pick card selector</button></div>
+    <div class="row" style="display:flex; gap:6px">
+      <button id="btn-pick" style="flex:1">Pick card selector</button>
+      <button id="btn-clear-selectors" style="flex:1">Reset selectors</button>
+    </div>
+    <div class="row"><button id="btn-open-template">Open template page</button></div>
     </div>
     <div id="view-share" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>Saved wishlists</label>
+        <label>Saved</label>
         <div style="display:flex; gap:6px">
-          <select id="profile-select" style="flex:1"></select>
+          <select id="saved-select" style="flex:1"></select>
+          <button id="btn-saved-load" style="width:auto">Load</button>
+          <button id="btn-saved-delete" style="width:auto">Delete</button>
         </div>
         <div style="display:flex; gap:6px; margin-top:6px">
-          <input id="profile-name" placeholder="New profile name" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
-          <button id="profile-save" style="width:auto">Save Name</button>
-          <button id="profile-delete" style="width:auto">Delete</button>
+          <input id="saved-title" placeholder="Save Title" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <button id="btn-saved-save" style="width:auto">Save Title</button>
+          <button id="btn-saved-rename" style="width:auto">Rename</button>
         </div>
       </div>
-      <div class="row"><button id="btn-crop-data">Capture (crop) to upload</button></div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <div id="drop-zone">Drop image here, paste (Ctrl+V), or use Load image file…</div>
       </div>
       <div class="row" style="display:flex; gap:6px">
         <button id="btn-load-file" style="flex:1">Load image file…</button>
+        <button id="btn-clear-image" style="width:auto">Clear image</button>
         <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <img id="image-preview" alt="preview" style="max-width:100%; border-radius:10px; border:1px solid var(--border); display:none" />
-        <span class="muted">Tip: Load a saved PNG (e.g., posted on forums), then Upload to get a shareable URL + forum link.</span>
-      </div>
-      <div class="row" style="justify-content:space-between; align-items:center">
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="resize-390260" checked /> Auto-resize to 390×260 before upload</label>
-        <span id="qu-warning" class="muted" style="display:none">ImgBB key missing. Set it in Resources.</span>
+        <span class="muted">Tip: You can load a saved PNG/JPG from anywhere, then Upload to get a shareable URL + forum BBCode.</span>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Image URL</label>
-  <input id="image-url" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+        <input id="image-url" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+        <div id="upload-status" class="muted" style="margin-top:6px; min-height:14px"></div>
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="btn-upload" style="flex:1">Upload</button>
           <button id="btn-copy-url" style="width:auto">Copy URL</button>
@@ -160,17 +179,22 @@
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Forum link (BBCode)</label>
-  <textarea id="forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)"></textarea>
+        <label style="display:flex; align-items:center; gap:8px; margin:4px 0 6px 0; font-size:12px; color: var(--muted)">
+          <input id="include-title" type="checkbox" checked /> Include title in forum code
+        </label>
+        <textarea id="forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)"></textarea>
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="btn-copy-forum" style="flex:1">Copy forum link</button>
         </div>
+        <div id="no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL — upload or attach an image first.</div>
       </div>
     </div>
-    <div id="view-resources" style="display:none">
+    <div id="view-settings" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it below.</p>
         <div style="display:flex; gap:6px">
           <button id="btn-get-imgbb-key" style="flex:1">Get imgbb API key</button>
+          <button id="btn-open-help" style="width:auto">Help/Guide</button>
         </div>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
@@ -178,7 +202,18 @@
         <div style="display:flex; gap:6px">
           <input id="imgbb-key" placeholder="Paste your imgbb API key" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
           <button id="btn-save-imgbb" style="width:auto">Save</button>
+          <button id="btn-test-imgbb" style="width:auto">Test key</button>
         </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Max saved entries</label>
+        <select id="saved-cap-select">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="unlimited">Unlimited</option>
+        </select>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Theme</label>
@@ -189,6 +224,27 @@
           <option value="emerald">Emerald</option>
           <option value="contrast">High Contrast</option>
         </select>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Header font</label>
+        <select id="header-font-select">
+          <option value="script-brush">Script (Brush)</option>
+          <option value="script-segoe">Script (Segoe)</option>
+          <option value="handwritten">Handwritten (Bradley)</option>
+          <option value="roundhand">Roundhand (Snell/Chancery)</option>
+          <option value="cursive">Generic Cursive</option>
+          <option value="sans">Sans (default)</option>
+          <option value="local-1">Local: Header Script (from fonts folder)</option>
+        </select>
+      </div>
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="auto-switch-share" checked /> Switch to Share tab after capture</label>
+        <button id="btn-reset-settings" style="width:auto">Reset settings</button>
+      </div>
+      <div class="row" style="display:flex; gap:6px">
+        <button id="btn-export-json" style="flex:1">Export JSON</button>
+        <button id="btn-import-json" style="flex:1">Import JSON</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none" />
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Tips:
