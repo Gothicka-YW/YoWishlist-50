@@ -1,5 +1,5 @@
 YoWishlist 50 — Privacy Policy
-Effective date: October 7, 2025
+Effective date: October 8, 2025
 
 Who we are
 YoWishlist 50 is a free, open‑source Chrome extension that helps YoWorld forum users collect and share wish lists. The project is maintained publicly on GitHub at:
@@ -10,12 +10,13 @@ This policy explains what data the extension accesses, stores, or transmits, and
 What data the extension processes
 1) On-device (default behavior)
    - Saved items: The “Saved” list stores a title and an image URL you chose. This is kept in Chrome’s extension storage (chrome.storage.sync) under your Google account and may sync across your Chrome profiles if sync is enabled.
-   - Settings: The extension stores options such as limit, theme, header font, include-title toggle, and your last opened tab. If you provide an imgbb API key, it is stored in chrome.storage.sync as well.
+   - Settings: The extension stores options such as limit, columns (grid estimate), theme, header font, include-title toggle, and your last opened tab. If you provide an imgbb API key, it is stored in chrome.storage.sync as well.
+   - Picked selectors (optional): If you use “Pick card selector”, the extension saves a CSS selector for the grid container and card elements, plus the index of the clicked tile. This helps start crops from the intended row even after you change the Limit. These values are stored in chrome.storage.sync and only apply to yoworld.info pages. You can clear them via “Reset selectors” in the popup.
    - Temporary images: Images that you paste, drop, or load into the Share tab are processed locally in the popup and are not transmitted anywhere unless you explicitly choose to upload.
 
 2) Page access (yoworld.info only)
    - The content script reads the structure of pages on yoworld.info to detect and list items for preview/export. The extension does not collect personal information from these pages and does not transmit page content to any server.
-   - When you trigger a cropped export, the extension captures and stitches screenshots of the current tab locally to create an image for download. These captures are used only to build your export and are not sent anywhere by the extension.
+   - When you trigger a cropped export, the extension captures and stitches screenshots of the current tab locally to create an image for download. During capture, it may temporarily hide sticky/fixed headers and apply a white background to avoid obstructions and ensure clean edges; these style changes are reverted immediately after capture. Captures are used only to build your export and are not sent anywhere by the extension.
 
 Uploads to third‑party services (only when you click “Upload”)
 If you press Upload in the Share tab, the image you selected is sent to an external hosting provider to obtain a shareable URL. The extension may use:
@@ -42,6 +43,7 @@ Data retention and control
    - In-extension data (Saved entries, settings, API keys) persists until you remove it, reset settings, or uninstall the extension. You can:
        • Delete Saved entries individually from the Share tab.
        • Reset settings from the Settings tab.
+   • Reset picked selectors from the Main tab using “Reset selectors”.
        • Remove the extension from Chrome to delete its local data.
    - If Chrome Sync is enabled, some settings may sync across devices under your Google account per Chrome’s behavior.
    - Images you upload to third‑party hosts are retained by those services according to their policies. To remove an uploaded image, use controls on the hosting site; the extension cannot delete third‑party hosted images on your behalf.

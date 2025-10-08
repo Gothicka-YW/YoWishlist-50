@@ -474,13 +474,15 @@ const docTop = rect.top + window.scrollY;
   function trimStartFromHint(root){
     try{
       const cards = findCards(root);
-      if (!cards.length) return 0;
+      if (!cards.length) return { idx: 0, used: 'auto' };
       // Prefer matching the originally clicked element by selector path
       let idx = -1;
+      let used = 'auto';
       if (state.selectorHint){
         const hinted = document.querySelector(state.selectorHint);
         if (hinted){
           idx = cards.findIndex(c => c && hinted && c.contains(hinted));
+          if (idx >= 0) used = 'picked';
         }
       }
       // Fallback: use stored pickIndex only when we have a selector hint AND the saved container matches this root/section
@@ -494,6 +496,7 @@ const docTop = rect.top + window.scrollY;
         } catch {}
         if (okContainer) {
           idx = Math.min(state.pickIndex, cards.length - 1);
+          if (idx >= 0) used = 'picked';
         }
       }
       if (idx > 0){
@@ -502,10 +505,10 @@ const docTop = rect.top + window.scrollY;
           state.removed.push({node:n,parent:n.parentNode,next:n.nextSibling});
           if(n&&n.parentNode) n.parentNode.removeChild(n);
         }
-        return idx;
+        return { idx, used };
       }
-      return 0;
-    } catch { return 0; }
+      return { idx: 0, used };
+    } catch { return { idx: 0, used: 'auto' }; }
   }
   function clickDownload(){ const labels=['download template','download','export','save image','save','png','jpg']; const btns=Array.from(document.querySelectorAll('button, a, [role="button"], input[type="button"], input[type="submit"]')); for(const b of btns){ const t=(b.textContent||b.value||'').trim().toLowerCase(); if(t && labels.some(l=>t.includes(l))){ b.click(); return true; } } const all=Array.from(document.querySelectorAll('*')); for(const el of all){ const t=(el.getAttribute('title')||el.getAttribute('aria-label')||'').toLowerCase(); if(t && ['download','export','save'].some(l=>t.includes(l))){ el.click(); return true; } } return false; }
 
@@ -556,12 +559,12 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-      // Hide items above the picked tile, then remove beyond N
-      trimStartFromHint(rootInfo.root);
+  // Hide items above the picked tile, then remove beyond N
+  const startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok) toast('Could not detect item grid — pick a tile again or scroll the section into view, then retry.');
       else toast(`Preview: showing first ${res.count} of ${res.total}`);
-      sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total });
+  sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total, startFrom: (startInfo && startInfo.used) || 'auto' });
       return true;
     }
     if (msg.type === 'yl50-export'){
@@ -571,13 +574,13 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-      trimStartFromHint(rootInfo.root);
+  const startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
       const clicked=clickDownload(); if(!clicked) toast('Download button not found — click it manually.');
       setTimeout(()=>{ forceWhiteBackground(false); restore(); restoreRemovedSections(); }, 1400);
-      sendResponse && sendResponse({ ok:true, count: res.count, clicked });
+  sendResponse && sendResponse({ ok:true, count: res.count, clicked, startFrom: (startInfo && startInfo.used) || 'auto' });
       return true;
     }
     if (msg.type === 'yl50-export-crop'){
@@ -587,7 +590,7 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-      trimStartFromHint(rootInfo.root);
+  const startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
@@ -635,7 +638,7 @@ const docTop = rect.top + window.scrollY;
           toast('Crop capture failed — try again or use the page\'s Download button.');
         }
       }, 300);
-      sendResponse && sendResponse({ ok:true, cropped:true });
+  sendResponse && sendResponse({ ok:true, cropped:true, startFrom: (startInfo && startInfo.used) || 'auto' });
       return true;
     }
     if (msg.type === 'yl50-export-crop-data'){
@@ -645,9 +648,9 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-      trimStartFromHint(rootInfo.root);
+  const startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
-      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+  if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false, startFrom: (startInfo && startInfo.used) || 'auto' }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
       setTimeout(async ()=>{
         hideFixedAndStickyOverlays(rootInfo.root);
@@ -681,9 +684,9 @@ const docTop = rect.top + window.scrollY;
           if(dataUrl){
             const title = __deriveTitleFromRoot__(rootInfo);
             const filename = __safeFilenameFromTitle__(title || 'yowishlist50');
-            sendResponse && sendResponse({ ok:true, dataUrl, filename });
+            sendResponse && sendResponse({ ok:true, dataUrl, filename, startFrom: (startInfo && startInfo.used) || 'auto' });
           }
-          else { toast('Crop capture failed — try again or use the page\'s Download button.'); sendResponse && sendResponse({ ok:false }); }
+          else { toast('Crop capture failed — try again or use the page\'s Download button.'); sendResponse && sendResponse({ ok:false, startFrom: (startInfo && startInfo.used) || 'auto' }); }
         } catch(e){
           forceWhiteBackground(false);
           restoreHiddenOverlays();

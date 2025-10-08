@@ -87,7 +87,16 @@
     chrome.storage.sync.set({ yl50_limit: limit, yl50_columns: columns, yl50_scope_name: scopeName });
     chrome.tabs.sendMessage(tabId, { type: 'yl50-update-settings', limit, columns, scopeName }, () => done && done());
   }
-  function run(tabId, type){ sendUpdate(tabId, () => chrome.tabs.sendMessage(tabId, { type }, () => {})); }
+  function updateStartStatus(res){
+    try{
+      const el = document.getElementById('start-status'); if(!el) return;
+      const v = (res && res.startFrom) ? String(res.startFrom) : '';
+      el.textContent = 'Start from: ' + (v ? (v === 'picked' ? 'Picked tile' : 'Auto') : '—');
+    }catch{}
+  }
+  function run(tabId, type){
+    sendUpdate(tabId, () => chrome.tabs.sendMessage(tabId, { type }, (res) => { updateStartStatus(res); }));
+  }
   $('#btn-preview').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-preview')); });
   $('#btn-export-crop').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-export-crop')); });
   $('#btn-restore').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-restore')); });
