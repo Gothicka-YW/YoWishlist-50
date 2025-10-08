@@ -289,6 +289,113 @@ const docTop = rect.top + window.scrollY;
     return canvas.toDataURL('image/png');
   }
 
+  // New: capture an arbitrary document-absolute rectangle (left/top in document coords)
+  async function captureStitchedRect(absLeft, absTop, width, height, padding={ top:8, right:14, bottom:14, left:14 }){
+    const dpr = window.devicePixelRatio || 1;
+    // Normalize padding
+    const pad = (typeof padding === 'object' && padding) ? padding : { top: padding, right: padding, bottom: padding, left: padding };
+    const pTop = Math.max(0, Math.floor(pad.top||0));
+    const pLeft = Math.max(0, Math.floor(pad.left||0));
+    const pRight = Math.max(0, Math.floor(pad.right||0));
+    const pBottom = Math.max(0, Math.floor(pad.bottom||0));
+
+    const top = Math.max(0, Math.floor(absTop - pTop));
+    const left = Math.max(0, Math.floor(absLeft - pLeft));
+    const totalW = Math.ceil(width + pLeft + pRight);
+    const totalH = Math.ceil(height + pTop + pBottom);
+
+    const prevScrollX = window.scrollX, prevScrollY = window.scrollY;
+    const prevBehavior = document.documentElement.style.scrollBehavior || '';
+    document.documentElement.style.scrollBehavior = 'auto';
+
+    const viewH = window.innerHeight;
+    const overlap = 180;
+    const stride = Math.max(50, viewH - overlap);
+
+    const targetW = Math.ceil(totalW * dpr);
+    const targetH = Math.ceil(totalH * dpr);
+    const overscanPx = Math.ceil(128 * dpr);
+    const workH = targetH + overscanPx;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW; canvas.height = workH;
+    const ctx = canvas.getContext('2d');
+
+    // Prewarm lazy content
+    try{
+      for (let y = top; y < top + totalH; y += stride){
+        const targetScrollY = Math.max(0, Math.min(y, (top + totalH) - window.innerHeight));
+        window.scrollTo(0, targetScrollY);
+        await new Promise(r => setTimeout(r, 140));
+      }
+      window.scrollTo(0, top);
+      await new Promise(r => setTimeout(r, 180));
+    } catch {}
+
+    for (let y = top; y < top + totalH; y += stride){
+      const bottom = top + totalH;
+      const isLast = (y + stride >= bottom);
+      const targetScrollY = isLast ? Math.max(0, bottom - window.innerHeight) : y;
+      window.scrollTo(0, targetScrollY);
+      await new Promise(r => setTimeout(r, 380));
+      const reply = await new Promise(res => chrome.runtime.sendMessage({ type:'yl50-capture' }, r => res(r)));
+      if (!reply || !reply.ok || !reply.dataUrl) continue;
+      const img = await dataUrlToImage(reply.dataUrl);
+
+      const viewportTop = window.scrollY;
+      const viewportBottom = viewportTop + window.innerHeight;
+      const sliceTop = Math.max(top, viewportTop);
+      const sliceBottom = Math.min(top + totalH, viewportBottom);
+      const visibleH = Math.max(0, sliceBottom - sliceTop);
+      if (visibleH <= 0) continue;
+
+      const sx = Math.max(0, Math.round((left - window.scrollX) * dpr));
+      const sy = Math.max(0, Math.round((sliceTop - viewportTop) * dpr));
+      const sw = Math.min(Math.ceil(totalW * dpr), img.width - sx);
+      let sh = Math.min(Math.round(visibleH * dpr), img.height - sy);
+      const dy = Math.max(0, Math.round((sliceTop - top) * dpr));
+      if (dy + sh > workH) sh = Math.max(0, workH - dy);
+      try { ctx.drawImage(img, sx, sy, sw, sh, 0, dy, sw, sh); } catch{}
+    }
+
+    window.scrollTo(prevScrollX, prevScrollY);
+    document.documentElement.style.scrollBehavior = prevBehavior;
+
+    if (workH !== targetH){
+      const out = document.createElement('canvas');
+      out.width = targetW; out.height = targetH;
+      const octx = out.getContext('2d');
+      try { octx.drawImage(canvas, 0, 0, targetW, targetH, 0, 0, targetW, targetH); } catch{}
+      return out.toDataURL('image/png');
+    }
+    return canvas.toDataURL('image/png');
+  }
+
+  // Compute a tight union rect for the first N visible card "image areas"
+  function firstNCards(root, n=6){
+    try{ const arr = findCards(root).filter(n=> n && n.offsetParent!==null); return arr.slice(0, Math.max(0, n)); }catch{return [];} }
+  function rectForImageArea(card){
+    try{
+      // Prefer the largest <img> inside the card (likely the grey box area)
+      const imgs = Array.from(card.querySelectorAll('img'));
+      let best = null, bestA = 0;
+      for (const im of imgs){
+        try{ const r = im.getBoundingClientRect(); const a = Math.max(0, r.width*r.height); if (a > bestA){ best = r; bestA = a; } }catch{}
+      }
+      const r = best || card.getBoundingClientRect();
+      return { left: r.left + window.scrollX, top: r.top + window.scrollY, right: r.right + window.scrollX, bottom: r.bottom + window.scrollY };
+    }catch{ return null; }
+  }
+  function unionRectForCards(cards){
+    let L=Infinity, T=Infinity, R=-Infinity, B=-Infinity, count=0;
+    for (const c of cards){
+      const rr = rectForImageArea(c); if (!rr) continue;
+      L = Math.min(L, rr.left); T = Math.min(T, rr.top); R = Math.max(R, rr.right); B = Math.max(B, rr.bottom); count++;
+    }
+    if (!count || !isFinite(L) || !isFinite(T) || !isFinite(R) || !isFinite(B)) return null;
+    return { left: Math.floor(L), top: Math.floor(T), width: Math.ceil(R - L), height: Math.ceil(B - T) };
+  }
+
   // DOM ops
   function getContainer(){ if (state.containerSel){ try { const c=document.querySelector(state.containerSel); if(c) return c; } catch{} } return document; }
   function findCards(rootOverride){
@@ -445,15 +552,30 @@ const docTop = rect.top + window.scrollY;
       setTimeout(async ()=>{
         // Hide sticky/fixed overlays that could block rows during capture
         hideFixedAndStickyOverlays(rootInfo.root);
-        const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
-        forceWhiteBackground(false);
-        restoreHiddenOverlays();
+        let dataUrl = '';
+        try{
+          // Prefer tight union of first six cards (3x2) by image area, keeping white sides via extra left/right padding
+          const cards = firstNCards(rootInfo.root, Math.min(6, state.limit||6));
+          const uni = unionRectForCards(cards);
+          if (uni){
+            // Extra headroom for manual text under cards; tighter side padding
+            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, uni.height, { top: 8, right: 4, bottom: 74, left: 4 });
+          } else {
+            // Fallback to container crop with minimal side padding
+            dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
+          }
+        } finally {
+          forceWhiteBackground(false);
+          restoreHiddenOverlays();
+        }
         if(dataUrl){
           const title = __deriveTitleFromRoot__(rootInfo);
           const filename = __safeFilenameFromTitle__(title || 'yowishlist50');
           chrome.runtime.sendMessage({ type:'yl50-download', dataUrl, filename }, ()=>{ restore(); restoreRemovedSections(); });
+        } else {
+          restore(); restoreRemovedSections();
+          toast('Crop capture failed — try again or use the page\'s Download button.');
         }
-  else { restore(); restoreRemovedSections(); toast('Crop capture failed — try again or use the page\'s Download button.'); }
       }, 300);
       sendResponse && sendResponse({ ok:true, cropped:true });
       return true;
@@ -470,7 +592,14 @@ const docTop = rect.top + window.scrollY;
       setTimeout(async ()=>{
         hideFixedAndStickyOverlays(rootInfo.root);
         try {
-          const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
+          let dataUrl = '';
+          const cards = firstNCards(rootInfo.root, Math.min(6, state.limit||6));
+          const uni = unionRectForCards(cards);
+          if (uni){
+            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, uni.height, { top: 8, right: 4, bottom: 74, left: 4 });
+          } else {
+            dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
+          }
           forceWhiteBackground(false);
           restoreHiddenOverlays();
           restore(); restoreRemovedSections();
