@@ -1,5 +1,5 @@
 # YoWishlist-50
-Wish List importer for use on YoWorld Forums.
+Wish List importer for use on YoWorld Forums or to create "Sales" for the YoWorld Facebook selling groups.
 
 ## Privacy Policy
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
