@@ -1,5 +1,7 @@
 # YoWishlist‑50 v1.4.4 — Release Notes (2025‑10‑08)
 
+YoWishlist‑50 is used to quickly capture the first N item cards from yoworld.info/template. It’s built for two common sharing workflows: (1) posting clean wish lists on the YoWorld Forums, and (2) creating sales posts for YoWorld fan Facebook marketplace groups. Set your count, capture a seam‑free PNG, and upload/share anywhere.
+
 Tight 3×2 captures for Sales Boards, cleaner white sides, and extra space for multi‑line captions — all while keeping the rock‑solid stitched export from 1.4.3.
 
 ## Highlights

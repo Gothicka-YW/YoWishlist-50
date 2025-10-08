@@ -7,6 +7,8 @@ YoWishlist-50 is a fan-made Chrome extension that trims and exports the first N 
 
 Note: The legacy “Export first N (site)” option has been removed. Crop export is more reliable and consistent across layouts.
 
+Common uses: capturing the first N item cards to share clean wish lists on the YoWorld Forums and creating sales posts for YoWorld fan Facebook marketplace groups.
+
 No accounts or servers are used; settings are saved in Chrome sync storage. This tool isn’t affiliated with YoWorld or Big Viking Games.
 
 ---
