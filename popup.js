@@ -3,6 +3,7 @@
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const STORAGE_KEYS = {
     limit: 'yl50_limit',
+    columns: 'yl50_columns',
     scope: 'yl50_scope', // legacy
     scopeName: 'yl50_scope_name',
     container: 'yl50_container',
@@ -22,8 +23,9 @@
     savedLast: 'yl50_saved_last',
     includeTitle: 'yl50_include_title'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'main', yl50_include_title:true }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'main', yl50_include_title:true }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
+    if (document.getElementById('columns')) document.getElementById('columns').value = res.yl50_columns || 5;
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
     const warn = document.getElementById('qu-warning'); if(warn) warn.style.display = (res.yl50_imgbb_key ? 'none' : 'inline');
     if ($('#scope-name')) $('#scope-name').value = res.yl50_scope_name || '';
@@ -80,9 +82,10 @@
   function withReady(cb){ activeTemplateTab((tabId) => ensureContentReady(tabId, () => cb(tabId))); }
   function sendUpdate(tabId, done){
     const limit = Math.max(1, Math.min(100, Number($('#limit').value)||50));
+    const columns = Math.max(1, Math.min(10, Number(document.getElementById('columns')?.value)||5));
     const scopeName = ($('#scope-name') && $('#scope-name').value || '').trim();
-    chrome.storage.sync.set({ yl50_limit: limit, yl50_scope_name: scopeName });
-    chrome.tabs.sendMessage(tabId, { type: 'yl50-update-settings', limit, scopeName }, () => done && done());
+    chrome.storage.sync.set({ yl50_limit: limit, yl50_columns: columns, yl50_scope_name: scopeName });
+    chrome.tabs.sendMessage(tabId, { type: 'yl50-update-settings', limit, columns, scopeName }, () => done && done());
   }
   function run(tabId, type){ sendUpdate(tabId, () => chrome.tabs.sendMessage(tabId, { type }, () => {})); }
   $('#btn-preview').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-preview')); });
@@ -170,6 +173,14 @@
     chrome.storage.sync.set({ [STORAGE_KEYS.imgbbKey]: key });
     const warn = document.getElementById('qu-warning'); if(warn) warn.style.display = (key ? 'none' : 'inline');
   });
+
+  // Persist columns when changed
+  if (document.getElementById('columns')){
+    document.getElementById('columns').addEventListener('change', ()=>{
+      const v = Math.max(1, Math.min(10, Number(document.getElementById('columns').value)||5));
+      chrome.storage.sync.set({ [STORAGE_KEYS.columns]: v });
+    });
+  }
 
   // Resources: auto switch toggle
   if (document.getElementById('auto-switch-share')){

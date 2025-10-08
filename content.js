@@ -23,15 +23,17 @@ function __resolveContainerElement__(container) {
 
 // YoWishlist 50 — Content script v0.4.5 (stitched cropped export; no force-capture route)
 (function(){
-  const state = { limit: 50, which: 'wish', scopeName: '', removed: [], selectorHint: '', containerSel: '', cardSel: '', picking: false };
+  const state = { limit: 50, columns: 5, which: 'wish', scopeName: '', removed: [], selectorHint: '', containerSel: '', cardSel: '', pickIndex: -1, picking: false };
 
-  chrome.storage.sync.get({ yl50_limit: 50, yl50_scope: 'wish', yl50_scope_name: '', yl50_selectors: '', yl50_container: '', yl50_card: '' }, (res) => {
+  chrome.storage.sync.get({ yl50_limit: 50, yl50_columns: 5, yl50_scope: 'wish', yl50_scope_name: '', yl50_selectors: '', yl50_container: '', yl50_card: '', yl50_pick_index: -1 }, (res) => {
     state.limit = Number(res.yl50_limit) || 50;
+    state.columns = Number(res.yl50_columns) || 5;
     state.which = res.yl50_scope || 'wish';
     state.scopeName = res.yl50_scope_name || '';
     state.selectorHint = res.yl50_selectors || '';
     state.containerSel = res.yl50_container || '';
     state.cardSel = res.yl50_card || '';
+    state.pickIndex = (typeof res.yl50_pick_index === 'number') ? res.yl50_pick_index : -1;
     console.debug('[YoWishlist 50] ready (limit=%s, scope=%s, scopeName=%s, hint=%s, container=%s, card=%s)', state.limit, state.which, state.scopeName, state.selectorHint, state.containerSel, state.cardSel);
   });
 
@@ -396,6 +398,13 @@ const docTop = rect.top + window.scrollY;
     return { left: Math.floor(L), top: Math.floor(T), width: Math.ceil(R - L), height: Math.ceil(B - T) };
   }
 
+  // Choose padding based on how many cards we're including (approx rows at 3 columns)
+  function paddingForCount(count){
+    // Make bottom padding consistent across all limits to avoid caption/manual text clipping
+    // Sides stay tight; top modest; bottom generous
+    return { top: 8, right: 4, bottom: 74, left: 4 };
+  }
+
   // DOM ops
   function getContainer(){ if (state.containerSel){ try { const c=document.querySelector(state.containerSel); if(c) return c; } catch{} } return document; }
   function findCards(rootOverride){
@@ -464,12 +473,29 @@ const docTop = rect.top + window.scrollY;
   // Remove all cards before the clicked/ hinted card to start the list at the user's pick
   function trimStartFromHint(root){
     try{
-      if (!state.selectorHint) return 0;
-      const hinted = document.querySelector(state.selectorHint);
-      if (!hinted) return 0;
       const cards = findCards(root);
       if (!cards.length) return 0;
-      const idx = cards.findIndex(c => c.contains(hinted));
+      // Prefer matching the originally clicked element by selector path
+      let idx = -1;
+      if (state.selectorHint){
+        const hinted = document.querySelector(state.selectorHint);
+        if (hinted){
+          idx = cards.findIndex(c => c && hinted && c.contains(hinted));
+        }
+      }
+      // Fallback: use stored pickIndex only when we have a selector hint AND the saved container matches this root/section
+      if (idx < 0 && state.selectorHint && typeof state.pickIndex === 'number' && state.pickIndex > 0){
+        let okContainer = false;
+        try {
+          const savedContainer = state.containerSel ? document.querySelector(state.containerSel) : null;
+          if (savedContainer){
+            okContainer = (savedContainer === root) || savedContainer.contains(root) || root.contains(savedContainer);
+          }
+        } catch {}
+        if (okContainer) {
+          idx = Math.min(state.pickIndex, cards.length - 1);
+        }
+      }
       if (idx > 0){
         for (let i=0; i<idx; i++){
           const n = cards[i];
@@ -487,7 +513,15 @@ const docTop = rect.top + window.scrollY;
   function startPicker(){ if(state.picking) return; state.picking=true; const overlay=document.createElement('div'); Object.assign(overlay.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,0.08)',zIndex:2147483646,cursor:'crosshair',pointerEvents:'none'}); const tip=document.createElement('div'); tip.textContent='Click a single tile (outer white area). Press Esc to cancel.'; Object.assign(tip.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',top:'10px',background:'#111',color:'#fff',padding:'6px 10px',borderRadius:'8px',fontSize:'12px',zIndex:2147483647}); document.documentElement.append(overlay,tip); toast('Picker armed — click a tile');
     function cleanup(){ try{ overlay.remove(); tip.remove(); }catch{} document.removeEventListener('click', onDocClick, true); document.removeEventListener('keydown', onKey, true); state.picking=false; }
     function onKey(e){ if(e.key==='Escape'){ e.preventDefault(); cleanup(); toast('Picker cancelled'); } }
-  function onDocClick(e){ e.preventDefault(); e.stopPropagation(); const target=document.elementFromPoint(e.clientX,e.clientY); let node=target; while(node && node!==document.body && (!node.classList || node.classList.length===0)){ node=node.parentElement; } const card=closestCard(node)||node; const cardSelector=tagAndClasses(card); let chosenContainer=null, chosenCount=0; let cur=card.parentElement; for(let hops=0;cur && hops<12;hops++,cur=cur.parentElement){ try{ const count=Array.from(cur.querySelectorAll(cardSelector)).filter(n=>n.offsetParent!==null).length; if(count>=6){ chosenContainer=cur; chosenCount=count; break; } if(!chosenContainer && count>=3){ chosenContainer=cur; chosenCount=count; } }catch{} } if(!chosenContainer) chosenContainer=document; state.containerSel=uniqueCssPath(chosenContainer); state.cardSel=cardSelector; state.selectorHint=uniqueCssPath(card); state.which = 'auto'; chrome.storage.sync.set({ yl50_container: state.containerSel, yl50_card: state.cardSel, yl50_selectors: state.selectorHint, yl50_scope: 'auto' }); cleanup(); toast(`Saved ✓ Found ${chosenCount} tiles in section`); }
+  function onDocClick(e){ e.preventDefault(); e.stopPropagation(); const target=document.elementFromPoint(e.clientX,e.clientY); let node=target; while(node && node!==document.body && (!node.classList || node.classList.length===0)){ node=node.parentElement; } const card=closestCard(node)||node; const cardSelector=tagAndClasses(card); let chosenContainer=null, chosenCount=0; let cur=card.parentElement; for(let hops=0;cur && hops<12;hops++,cur=cur.parentElement){ try{ const count=Array.from(cur.querySelectorAll(cardSelector)).filter(n=>n.offsetParent!==null).length; if(count>=6){ chosenContainer=cur; chosenCount=count; break; } if(!chosenContainer && count>=3){ chosenContainer=cur; chosenCount=count; } }catch{} } if(!chosenContainer) chosenContainer=document; state.containerSel=uniqueCssPath(chosenContainer); state.cardSel=cardSelector; state.selectorHint=uniqueCssPath(card); state.which = 'auto';
+    // Compute and persist the index of the picked card within the chosen container for robust mid-list starts
+    let pickIndex = -1;
+    try {
+      const within = Array.from(chosenContainer.querySelectorAll(cardSelector)).filter(n=>n.offsetParent!==null);
+      pickIndex = within.indexOf(card);
+    } catch {}
+    state.pickIndex = pickIndex;
+    chrome.storage.sync.set({ yl50_container: state.containerSel, yl50_card: state.cardSel, yl50_selectors: state.selectorHint, yl50_scope: 'auto', yl50_pick_index: state.pickIndex }); cleanup(); toast(`Saved ✓ Found ${chosenCount} tiles in section`); }
     document.addEventListener('click', onDocClick, true); document.addEventListener('keydown', onKey, true);
   }
 
@@ -497,13 +531,15 @@ const docTop = rect.top + window.scrollY;
     if (msg.type === 'yl50-ping'){ sendResponse && sendResponse({ ok:true, ready:true }); return true; }
     if (msg.type === 'yl50-update-settings'){
       if (typeof msg.limit==='number') state.limit=msg.limit;
-      if (typeof msg.which==='string') state.which=msg.which; // legacy
+  if (typeof msg.which==='string') state.which=msg.which; // legacy
       if (typeof msg.scopeName==='string') state.scopeName=msg.scopeName;
+  if (typeof msg.columns==='number') state.columns = msg.columns;
       if (typeof msg.containerSel==='string') state.containerSel=msg.containerSel;
       if (typeof msg.cardSel==='string') state.cardSel=msg.cardSel;
       if (typeof msg.selectorHint==='string') state.selectorHint=msg.selectorHint;
       chrome.storage.sync.set({
         yl50_limit: state.limit,
+        yl50_columns: state.columns,
         yl50_scope: state.which,
         yl50_scope_name: state.scopeName,
         yl50_container: state.containerSel,
@@ -515,6 +551,8 @@ const docTop = rect.top + window.scrollY;
     }
     if (msg.type === 'yl50-preview'){
       ensurePreviewOn();
+      // Always start from a restored list so changing Limit works predictably across previews
+      restore();
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
@@ -528,6 +566,8 @@ const docTop = rect.top + window.scrollY;
     }
     if (msg.type === 'yl50-export'){
       ensurePreviewOn();
+      // Ensure previously removed items are restored before applying a new Limit
+      restore();
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
@@ -542,6 +582,8 @@ const docTop = rect.top + window.scrollY;
     }
     if (msg.type === 'yl50-export-crop'){
       ensurePreviewOn();
+      // Restore full list first so union/crop can include newly requested rows
+      restore();
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
@@ -554,12 +596,28 @@ const docTop = rect.top + window.scrollY;
         hideFixedAndStickyOverlays(rootInfo.root);
         let dataUrl = '';
         try{
-          // Prefer tight union of first six cards (3x2) by image area, keeping white sides via extra left/right padding
-          const cards = firstNCards(rootInfo.root, Math.min(6, state.limit||6));
+          // Prefer tight union of the first N cards (limit) by image area
+          const n = Math.max(1, Number(state.limit||6));
+          const cards = firstNCards(rootInfo.root, n);
           const uni = unionRectForCards(cards);
           if (uni){
-            // Extra headroom for manual text under cards; tighter side padding
-            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, uni.height, { top: 8, right: 4, bottom: 74, left: 4 });
+            // Expand union height to cover desired rows even if only a subset is currently rendered
+            const cols = Math.max(1, Number(state.columns||5));
+            const rowsDesired = Math.max(1, Math.ceil(n / cols));
+            // Estimate row height from visible cards' image areas
+            let sumH = 0, cntH = 0;
+            for (const c of cards){
+              try { const r = rectForImageArea(c); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
+            }
+            let rowH = 0;
+            if (cntH > 0) rowH = Math.round(sumH / cntH);
+            if (!rowH){
+              const visibleRows = Math.max(1, Math.ceil(cards.length / cols));
+              rowH = Math.max(1, Math.round(uni.height / visibleRows));
+            }
+            const targetH = Math.max(uni.height, rowH * rowsDesired);
+            const pad = paddingForCount(cards.length);
+            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
             // Fallback to container crop with minimal side padding
             dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
@@ -582,6 +640,8 @@ const docTop = rect.top + window.scrollY;
     }
     if (msg.type === 'yl50-export-crop-data'){
       ensurePreviewOn();
+      // Restore before computing new union in data-returning mode
+      restore();
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
@@ -593,10 +653,25 @@ const docTop = rect.top + window.scrollY;
         hideFixedAndStickyOverlays(rootInfo.root);
         try {
           let dataUrl = '';
-          const cards = firstNCards(rootInfo.root, Math.min(6, state.limit||6));
+          const n = Math.max(1, Number(state.limit||6));
+          const cards = firstNCards(rootInfo.root, n);
           const uni = unionRectForCards(cards);
           if (uni){
-            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, uni.height, { top: 8, right: 4, bottom: 74, left: 4 });
+            const cols = Math.max(1, Number(state.columns||5));
+            const rowsDesired = Math.max(1, Math.ceil(n / cols));
+            let sumH = 0, cntH = 0;
+            for (const c of cards){
+              try { const r = rectForImageArea(c); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
+            }
+            let rowH = 0;
+            if (cntH > 0) rowH = Math.round(sumH / cntH);
+            if (!rowH){
+              const visibleRows = Math.max(1, Math.ceil(cards.length / cols));
+              rowH = Math.max(1, Math.round(uni.height / visibleRows));
+            }
+            const targetH = Math.max(uni.height, rowH * rowsDesired);
+            const pad = paddingForCount(cards.length);
+            dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
             dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
           }

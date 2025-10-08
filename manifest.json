@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YoWishlist 50",
-  "version": "1.4.4",
+  "version": "1.4.9",
   "description": "Export the first N items on yoworld.info/template. Cropped export stitches full height without scroll artifacts. Fan Tool",
   "permissions": [
     "storage",

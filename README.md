@@ -5,6 +5,21 @@ Wish List importer for use on YoWorld Forums or to create "Sales" for the YoWorl
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
 - PRIVACY_POLICY: https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt
 
+## What’s new (v1.4.9)
+- Refinement: The mid-list pick index is only used when a selector hint exists and matches the current section, so exports without preview work as before.
+
+## What’s new (v1.4.8)
+- Robust mid-list crops: The picker stores the clicked tile’s index; crops fall back to it if the selector path changes, so you don’t get random items after preview.
+
+## What’s new (v1.4.7)
+- Reliability: Changing Limit after a preview no longer requires re-picking a tile. Preview/Export auto-restore the list before applying the new Limit.
+
+## What’s new (v1.4.6)
+- Padding: Bottom padding is now consistent across all Limits to prevent caption/manual text clipping on mid‑sized crops (e.g., 30 items). White sides and tight union are unchanged.
+
+## What’s new (v1.4.5)
+- Padding: Added ~48 px more bottom padding for large crops (≥9 rows; e.g., Limit 50 with 5 columns) so manual text/captions aren’t clipped. Smaller crops unchanged.
+
 ## What’s new (v1.4.4)
 - Tight 3×2 crop: When capturing six tiles, the crop locks to the first 3×2 image area, keeping slim white sides.
 - Padding tuned: More bottom space so multi‑line captions/manual text aren’t clipped; reduced left/right margins ~12 px for a tighter composition.

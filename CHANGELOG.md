@@ -1,5 +1,20 @@
 # YoWishlist-50 Changelog
 
+## 1.4.5 - 2025-10-08
+- Tweak: Increased bottom padding by ~48 px for large crops (≥9 rows; e.g., Limit 50 with 5 columns) to prevent manual text/captions from being clipped. Smaller crops keep prior padding.
+
+## 1.4.6 - 2025-10-08
+- Tweak: Bottom padding is now consistent across all Limits to eliminate caption/manual text clipping on mid‑sized crops (e.g., 30 items). White sides and tight union are unchanged.
+
+## 1.4.7 - 2025-10-08
+- Fix: Changing Limit after a preview sometimes required re-picking a tile to capture all rows. Preview/Export now auto-restore the list at the start so the new Limit applies cleanly without re-picking.
+
+## 1.4.8 - 2025-10-08
+- Fix: Cropping could start from a random row if you didn’t re-pick after preview. The picker now stores the clicked tile’s index and the crop falls back to that index if the exact selector no longer matches, keeping mid‑list crops stable.
+
+## 1.4.9 - 2025-10-08
+- Tweak: The pick-index fallback now only applies when a selector hint exists and the saved container matches the active section, preventing unintended offsets when exporting without previewing.
+
 ## 1.4.4 - 2025-10-08
 - New: Tight 3×2 crop for Sales Board screenshots. When exporting with Limit = 6 (or when only six tiles are visible), the crop targets the image areas of the first six cards, preserving clean white sides.
 - Tweak: Increased bottom padding so multi‑line captions/manual text aren’t clipped; reduced left/right side margins by ~12 px each for a tighter look.

@@ -14,10 +14,12 @@ If installed from Chrome Web Store, you are all set.
 - Export (crop): Captures and stitches a clean image of the selected grid without scroll artifacts.
 - Restore list: Reverts temporary page changes made by Preview/Export.
 - Pick card selector: Choose a single item tile to help the tool detect your grid if auto-detect misses.
+	Note: On the yoworld.info template page, click "Preview Template" first so the item cards render, then use Pick card selector on a single tile.
 - Reset selectors: Clears stored selectors so you can re-pick.
 - Open template page: Opens https://yoworld.info/template in a tab.
 
 Tips:
+- On the yoworld.info template page, click "Preview Template" before using Pick card selector or Export (crop). This ensures the grid is fully rendered for accurate detection/capture.
 - Keep the template page visible during Crop captures.
 - If detection misses your grid, use Pick card selector on a single tile, then retry.
 - Press Enter in the Scope field to scroll to and highlight the matching section.
