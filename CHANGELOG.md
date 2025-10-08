@@ -1,5 +1,11 @@
 # YoWishlist-50 Changelog
 
+## 1.4.4 - 2025-10-08
+- New: Tight 3×2 crop for Sales Board screenshots. When exporting with Limit = 6 (or when only six tiles are visible), the crop targets the image areas of the first six cards, preserving clean white sides.
+- Tweak: Increased bottom padding so multi‑line captions/manual text aren’t clipped; reduced left/right side margins by ~12 px each for a tighter look.
+- Reliability: Keeps the stitched capture engine improvements from 1.4.3 (pre‑scroll, overlap, overscan) and hides sticky/fixed headers during capture. Falls back to container crop if the grid cannot be detected.
+- UX: Recommended flow — Pick card selector on one tile → Preview first N → Export (crop). This produces a ready 3×2 composite you can share or slice as needed.
+
 ## 1.4.3 - 2025-10-07
 - Removed: “Export first N (site)” button. The crop export now covers the primary export use case and avoids site-dependent behavior.
 - Fix: Export (crop) could miss the last 2 rows (capturing ~40/50). The stitcher now uses the container’s full content height, hides sticky/fixed headers during capture, increases overlap and bottom overscan, and pre-scrolls to trigger lazy loading — resulting in all 50 cards captured consistently.

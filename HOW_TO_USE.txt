@@ -11,7 +11,6 @@ If installed from Chrome Web Store, you are all set.
 - Limit: Set how many items to include (e.g., 50).
 - Scope (optional): Type the list title as shown on yoworld.info (e.g., “My Wishlist”) so the tool targets that section.
 - Preview first N: Highlights the first N cards in the target section.
-- Export first N (site): Performs an in-page export using the site’s layout.
 - Export (crop): Captures and stitches a clean image of the selected grid without scroll artifacts.
 - Restore list: Reverts temporary page changes made by Preview/Export.
 - Pick card selector: Choose a single item tile to help the tool detect your grid if auto-detect misses.
@@ -22,6 +21,7 @@ Tips:
 - Keep the template page visible during Crop captures.
 - If detection misses your grid, use Pick card selector on a single tile, then retry.
 - Press Enter in the Scope field to scroll to and highlight the matching section.
+ - For a tight 3×2 capture: set Limit = 6, ensure a 3×2 is visible, then Export (crop). The crop targets the six card images and keeps slim white sides with extra space under captions.
 
 3) Share tab (save, upload, and share)
 - Saved: Store entries by title (Save/Rename/Delete). The list remembers your last selection.

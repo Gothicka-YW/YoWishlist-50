@@ -5,6 +5,11 @@ Wish List importer for use on YoWorld Forums.
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
 - PRIVACY_POLICY: https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt
 
+## What’s new (v1.4.4)
+- Tight 3×2 crop: When capturing six tiles, the crop locks to the first 3×2 image area, keeping slim white sides.
+- Padding tuned: More bottom space so multi‑line captions/manual text aren’t clipped; reduced left/right margins ~12 px for a tighter composition.
+- Fallback: If detection misses the grid, Export (crop) falls back to container crop with the same white background guarantee.
+
 ## What’s new (v1.4.3)
 - Removed: “Export first N (site)” button. Use Export (crop) for consistent results.
 - Fix: Export (crop) now captures all 50 cards reliably (handled scrollable containers, sticky headers, lazy loading, and seam overscan).
