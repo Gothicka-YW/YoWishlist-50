@@ -119,6 +119,78 @@ function __resolveContainerElement__(container) {
   function forceWhiteBackground(on){ try{ let tag=document.getElementById('yl50-white-style'); if(on){ if(!tag){ tag=document.createElement('style'); tag.id='yl50-white-style'; tag.textContent=`html, body, #root, .container, * { background: #ffffff !important; }`; (document.head||document.documentElement).appendChild(tag);} } else { if(tag) tag.remove(); } }catch{} }
   function dataUrlToImage(dataUrl){ return new Promise((resolve,reject)=>{ const img=new Image(); img.onload=()=>resolve(img); img.onerror=(e)=>reject(e); img.src=dataUrl; }); }
 
+  // Build a filesystem-safe filename from a title
+  function __safeFilenameFromTitle__(title, fallback='yowishlist50'){
+    try{
+      let t = String(title||'').trim();
+      if (!t) t = fallback;
+      // Prefer value inside quotes; strip illegal Windows/macOS characters
+      t = t.replace(/[\\/:*?"<>|]/g, ' ');
+      // Collapse whitespace and replace with underscores
+      t = t.replace(/\s+/g, ' ').trim().replace(/\s/g, '_');
+      // Remove trailing dots/spaces and limit length
+      t = t.replace(/[\s\.]+$/g, '');
+      if (!t) t = fallback;
+      if (t.length > 80) t = t.slice(0, 80);
+      return t + '.png';
+    } catch { return (fallback||'yowishlist50') + '.png'; }
+  }
+  function __deriveTitleFromRoot__(rootInfo){
+    try{
+      if (!rootInfo) return '';
+      // Prefer explicit Scope name from state
+      if (state.scopeName && String(state.scopeName).trim()) return String(state.scopeName).trim();
+      // Else try header text or associated input value/placeholder
+      const head = rootInfo.head;
+      if (head){
+        const v = (head.value||'').toString().trim();
+        const ph = (head.placeholder||'').toString().trim();
+        const txt = (head.textContent||'').toString().trim();
+        return v || ph || txt || '';
+      }
+      return '';
+    } catch { return ''; }
+  }
+
+  // Hide common fixed/sticky overlays (headers, nav bars) that can occlude the grid during capture
+  const __hiddenOverlaysStack = [];
+  function hideFixedAndStickyOverlays(root){
+    const hidden = [];
+    try{
+      const rootRect = (root && root.getBoundingClientRect) ? root.getBoundingClientRect() : null;
+      const candidates = Array.from(document.querySelectorAll('*'));
+      for (const el of candidates){
+        try{
+          if (!el || el === root) continue;
+          const cs = getComputedStyle(el);
+          const pos = cs.position;
+          if (pos !== 'fixed' && pos !== 'sticky') continue;
+          const r = el.getBoundingClientRect();
+          // Heuristic: things near the top that span horizontally and could block content
+          const nearTop = r.top <= 140; // px from top of viewport
+          const wide = r.width >= Math.min(window.innerWidth * 0.5, 480);
+          const overlapsRoot = !rootRect || (r.bottom > rootRect.top - 2);
+          if (nearTop && wide && overlapsRoot && r.height > 10){
+            // Hide it
+            hidden.push({ el, prev: el.getAttribute('style') });
+            el.setAttribute('style', (el.getAttribute('style')||'') + '; display: none !important; visibility: hidden !important;');
+          }
+        } catch {}
+      }
+    } catch {}
+    __hiddenOverlaysStack.push(hidden);
+    return hidden.length;
+  }
+  function restoreHiddenOverlays(){
+    const hidden = __hiddenOverlaysStack.pop() || [];
+    for (const h of hidden){
+      try{
+        if (h.prev == null) h.el.removeAttribute('style');
+        else h.el.setAttribute('style', h.prev);
+      } catch {}
+    }
+  }
+
   async function captureStitchedTo(container, padding=22){
   const dpr = window.devicePixelRatio || 1;
   const el = __resolveContainerElement__(container);
@@ -126,6 +198,8 @@ function __resolveContainerElement__(container) {
     throw new TypeError("captureStitchedTo: resolved container does not support getBoundingClientRect()");
   }
   const rect = el.getBoundingClientRect();
+  // Use full content height of the container (handles scrollable grids)
+  const contentH = Math.ceil(Math.max(rect.height, el.scrollHeight || 0));
   // Existing implementation may rely on scrolling/tiling;
   // keep the rest of the original logic if present below this header.
 const docTop = rect.top + window.scrollY;
@@ -136,29 +210,41 @@ const docTop = rect.top + window.scrollY;
     const pLeft = Math.max(0, Math.floor(pad.left||0));
     const pRight = Math.max(0, Math.floor(pad.right||0));
     const pBottom = Math.max(0, Math.floor(pad.bottom||0));
-    const top = Math.max(0, Math.floor(docTop - pTop));
-    const left = Math.max(0, Math.floor(docLeft - pLeft));
-    const totalW = Math.ceil(rect.width + pLeft + pRight);
-    const totalH = Math.ceil(rect.height + pTop + pBottom);
+  const top = Math.max(0, Math.floor(docTop - pTop));
+  const left = Math.max(0, Math.floor(docLeft - pLeft));
+  const totalW = Math.ceil(rect.width + pLeft + pRight);
+  const bottomDoc = Math.ceil(docTop + contentH + pBottom);
+  const totalH = Math.max(0, bottomDoc - top);
 
     const prevScrollX = window.scrollX, prevScrollY = window.scrollY;
     const prevBehavior = document.documentElement.style.scrollBehavior || '';
     document.documentElement.style.scrollBehavior = 'auto';
 
   const viewH = window.innerHeight;
-  const overlap = 120; // larger overlap to reduce seam/gap risk
+  const overlap = 180; // larger overlap to reduce seam/gap risk and header occlusion
   const stride = Math.max(50, viewH - overlap);
 
   // Work canvas with a small bottom overscan to ensure final rows are fully covered
   const targetW = Math.ceil(totalW * dpr);
   const targetH = Math.ceil(totalH * dpr);
-  const overscanPx = Math.ceil(64 * dpr);
+  const overscanPx = Math.ceil(128 * dpr);
   const workH = targetH + overscanPx;
 
   const canvas = document.createElement('canvas');
   canvas.width = targetW;
   canvas.height = workH;
   const ctx = canvas.getContext('2d');
+
+    // Prewarm: scroll through the region once to trigger any lazy-loaded rows/images
+    try {
+      for (let y = top; y < top + totalH; y += stride){
+        const targetScrollY = Math.max(0, Math.min(y, (top + totalH) - window.innerHeight));
+        window.scrollTo(0, targetScrollY);
+        await new Promise(r => setTimeout(r, 140));
+      }
+      window.scrollTo(0, top);
+      await new Promise(r => setTimeout(r, 180));
+    } catch {}
 
     for (let y = top; y < top + totalH; y += stride){
       const bottom = top + totalH;
@@ -357,11 +443,18 @@ const docTop = rect.top + window.scrollY;
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
       setTimeout(async ()=>{
+        // Hide sticky/fixed overlays that could block rows during capture
+        hideFixedAndStickyOverlays(rootInfo.root);
         const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
         forceWhiteBackground(false);
-        if(dataUrl){ chrome.runtime.sendMessage({ type:'yl50-download', dataUrl, filename:'yowishlist50_cropped.png' }, ()=>{ restore(); restoreRemovedSections(); }); }
-        else { restore(); restoreRemovedSections(); toast('Crop capture failed — try normal Export.'); }
-      }, 250);
+        restoreHiddenOverlays();
+        if(dataUrl){
+          const title = __deriveTitleFromRoot__(rootInfo);
+          const filename = __safeFilenameFromTitle__(title || 'yowishlist50');
+          chrome.runtime.sendMessage({ type:'yl50-download', dataUrl, filename }, ()=>{ restore(); restoreRemovedSections(); });
+        }
+  else { restore(); restoreRemovedSections(); toast('Crop capture failed — try again or use the page\'s Download button.'); }
+      }, 300);
       sendResponse && sendResponse({ ok:true, cropped:true });
       return true;
     }
@@ -375,18 +468,25 @@ const docTop = rect.top + window.scrollY;
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
       setTimeout(async ()=>{
+        hideFixedAndStickyOverlays(rootInfo.root);
         try {
           const dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 12, bottom: 12, left: 12 });
           forceWhiteBackground(false);
+          restoreHiddenOverlays();
           restore(); restoreRemovedSections();
-          if(dataUrl){ sendResponse && sendResponse({ ok:true, dataUrl }); }
-          else { toast('Crop capture failed — try normal Export.'); sendResponse && sendResponse({ ok:false }); }
+          if(dataUrl){
+            const title = __deriveTitleFromRoot__(rootInfo);
+            const filename = __safeFilenameFromTitle__(title || 'yowishlist50');
+            sendResponse && sendResponse({ ok:true, dataUrl, filename });
+          }
+          else { toast('Crop capture failed — try again or use the page\'s Download button.'); sendResponse && sendResponse({ ok:false }); }
         } catch(e){
           forceWhiteBackground(false);
+          restoreHiddenOverlays();
           restore(); restoreRemovedSections();
           sendResponse && sendResponse({ ok:false, error: String(e&&e.message||e) });
         }
-      }, 250);
+      }, 300);
       return true;
     }
     if (msg.type === 'yl50-restore'){ restore(); restoreRemovedSections(); toast('List restored'); sendResponse && sendResponse({ ok:true }); return true; }

@@ -1,5 +1,10 @@
 # YoWishlist-50 Changelog
 
+## 1.4.3 - 2025-10-07
+- Removed: “Export first N (site)” button. The crop export now covers the primary export use case and avoids site-dependent behavior.
+- Fix: Export (crop) could miss the last 2 rows (capturing ~40/50). The stitcher now uses the container’s full content height, hides sticky/fixed headers during capture, increases overlap and bottom overscan, and pre-scrolls to trigger lazy loading — resulting in all 50 cards captured consistently.
+- UX: Updated failure messages to point users to retry or use the page’s own Download if needed.
+
 ## 1.4.2 - 2025-10-07
 - Visual: Buttons are smaller with a 3D gradient style; active tab uses a matching gradient. Default theme switched to a purple → dark blue background gradient with tuned surface/border colors.
 - Fonts: Default header font now prefers “Dancing Script” when no previous selection exists (falls back to sans if not available). Local font list is parsed from `fonts/fonts.css`.
