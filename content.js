@@ -23,7 +23,7 @@ function __resolveContainerElement__(container) {
 
 // YoWishlist 50 — Content script v0.4.5 (stitched cropped export; no force-capture route)
 (function(){
-  const state = { limit: 50, columns: 5, which: 'wish', scopeName: '', removed: [], selectorHint: '', containerSel: '', cardSel: '', pickIndex: -1, picking: false };
+  const state = { limit: 50, columns: 5, which: 'wish', scopeName: '', removed: [], selectorHint: '', containerSel: '', cardSel: '', pickIndex: -1, picking: false, previewStartIdx: -1, previewContainerSel: '' };
 
   chrome.storage.sync.get({ yl50_limit: 50, yl50_columns: 5, yl50_scope: 'wish', yl50_scope_name: '', yl50_selectors: '', yl50_container: '', yl50_card: '', yl50_pick_index: -1 }, (res) => {
     state.limit = Number(res.yl50_limit) || 50;
@@ -457,6 +457,23 @@ const docTop = rect.top + window.scrollY;
       state.removed=[];
     }
     document.querySelectorAll('[yl50-hidden="true"]').forEach(n=> n.removeAttribute('yl50-hidden'));
+    // Clear preview-derived start index on full restore
+    state.previewStartIdx = -1;
+    state.previewContainerSel = '';
+  }
+  function trimStartByIndex(root, idx){
+    try{
+      const count = Math.max(0, Number(idx)||0);
+      if (count <= 0) return 0;
+      const cards = findCards(root);
+      const upto = Math.min(count, cards.length);
+      for (let i=0; i<upto; i++){
+        const n = cards[i];
+        state.removed.push({node:n,parent:n.parentNode,next:n.nextSibling});
+        if(n&&n.parentNode) n.parentNode.removeChild(n);
+      }
+      return upto;
+    } catch { return 0; }
   }
   function removeBeyond(limit, root, skipRestore=false){
     if (!skipRestore) restore();
@@ -559,8 +576,14 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-  // Hide items above the picked tile, then remove beyond N
-  const startInfo = trimStartFromHint(rootInfo.root);
+      // Hide items above the picked tile, then remove beyond N
+      const startInfo = trimStartFromHint(rootInfo.root);
+      // Persist starting index and container selector for export to reuse without re-picking
+      try{
+        const cards = findCards(rootInfo.root);
+        state.previewStartIdx = Math.max(0, Number(startInfo && startInfo.idx || 0));
+        state.previewContainerSel = uniqueCssPath(rootInfo.root);
+      } catch {}
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok) toast('Could not detect item grid — pick a tile again or scroll the section into view, then retry.');
       else toast(`Preview: showing first ${res.count} of ${res.total}`);
@@ -574,7 +597,15 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-  const startInfo = trimStartFromHint(rootInfo.root);
+      // Reuse preview start if targeting same container
+      let startInfo = null;
+      if (state.previewStartIdx > 0){
+        try{
+          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
+        } catch {}
+      }
+      if (!startInfo) startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
@@ -590,7 +621,15 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-  const startInfo = trimStartFromHint(rootInfo.root);
+      // Reuse preview start if targeting same container
+      let startInfo = null;
+      if (state.previewStartIdx > 0){
+        try{
+          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
+        } catch {}
+      }
+      if (!startInfo) startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
@@ -648,7 +687,15 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-  const startInfo = trimStartFromHint(rootInfo.root);
+      // Reuse preview start if targeting same container
+      let startInfo = null;
+      if (state.previewStartIdx > 0){
+        try{
+          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
+        } catch {}
+      }
+      if (!startInfo) startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
   if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false, startFrom: (startInfo && startInfo.used) || 'auto' }); restoreRemovedSections(); return true; }
       forceWhiteBackground(true);
