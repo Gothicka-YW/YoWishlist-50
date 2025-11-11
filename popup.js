@@ -1,6 +1,7 @@
 (function(){
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const __uuid = () => { try{ if (crypto && crypto.randomUUID) return crypto.randomUUID(); }catch{} return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36); };
   const STORAGE_KEYS = {
     limit: 'yl50_limit',
     columns: 'yl50_columns',
@@ -22,8 +23,16 @@
     migratedV2: 'yl50_migrated_v2',
     savedLast: 'yl50_saved_last',
     includeTitle: 'yl50_include_title'
+    , avatars: 'yl50_avatars'
+    , avatarCap: 'yl50_avatar_cap'
+    , avatarLast: 'yl50_avatar_last'
+    , avatarLastGroup: 'yl50_avatar_last_group'
+    , avatarSearch: 'yl50_avatar_search'
+    , imagesSavedEntries: 'yl50_images_saved_entries'
+    , imagesSavedLast: 'yl50_images_saved_last'
+    , imagesIncludeTitle: 'yl50_images_include_title'
   };
-  chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'main', yl50_include_title:true }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'home', yl50_include_title:true, yl50_avatars:[], yl50_avatar_cap:'100', yl50_avatar_last:'', yl50_avatar_last_group:'', yl50_avatar_search:'', yl50_images_saved_entries:[], yl50_images_saved_last:'', yl50_images_include_title:true }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     if (document.getElementById('columns')) document.getElementById('columns').value = res.yl50_columns || 5;
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
@@ -37,6 +46,13 @@
     // Saved cap + saved entries
     if ($('#saved-cap-select')) $('#saved-cap-select').value = String(res.yl50_saved_cap || '50');
   if ($('#include-title')) $('#include-title').checked = !!res.yl50_include_title;
+  if (document.getElementById('images-include-title')) document.getElementById('images-include-title').checked = !!res.yl50_images_include_title;
+  // Avatars initial
+  if (document.getElementById('av-cap-select')) document.getElementById('av-cap-select').value = String(res.yl50_avatar_cap || '100');
+  if (document.getElementById('av-search')) document.getElementById('av-search').value = String(res.yl50_avatar_search || '');
+  // Load avatars and render grid placeholder
+  initAvatars(res.yl50_avatars || [], res.yl50_avatar_last || '', res.yl50_avatar_last_group || '', res.yl50_avatar_search || '');
+  initImages(res.yl50_images_saved_entries || [], res.yl50_images_saved_last || '');
     // Migration from legacy data if needed, then render
     maybeMigrateLegacy(() => {
       loadSavedEntries((entries)=> renderSavedSelect(entries));
@@ -63,6 +79,345 @@
         if (ok) return go();
       } catch(e){}
       chrome.tabs.update(tab.id, { url: 'https://yoworld.info/template' }, () => setTimeout(go, 900));
+    });
+  }
+  // ================== Avatars Data Model ==================
+  function normalizeTags(raw){
+    return Array.from(new Set(String(raw||'').split(/[,\n]/).map(t=>t.trim()).filter(Boolean)));
+  }
+  function avatarCapValue(){ return document.getElementById('av-cap-select')?.value || '100'; }
+  function enforceAvatarCap(list, cap){
+    if (!Array.isArray(list)) return [];
+    if (!cap || cap === 'unlimited') return list;
+    const n = Number(cap)||100; if (list.length <= n) return list;
+    // Drop oldest by updatedAt/createdAt
+    const sorted = [...list].sort((a,b)=> (b.updatedAt||b.createdAt||0) - (a.updatedAt||a.createdAt||0));
+    return sorted.slice(0, n);
+  }
+  function loadAvatars(cb){ chrome.storage.sync.get({ [STORAGE_KEYS.avatars]:[] }, r => { const arr = Array.isArray(r[STORAGE_KEYS.avatars])? r[STORAGE_KEYS.avatars] : []; cb(sanitizeAvatars(arr)); }); }
+  function saveAvatars(list, cb){ chrome.storage.sync.set({ [STORAGE_KEYS.avatars]: list }, ()=> cb && cb()); }
+  function sanitizeAvatars(list){
+    return (Array.isArray(list)? list : []).map(e=>({
+  id: String(e.id||__uuid()),
+      name: String(e.name||'').trim(),
+      group: String(e.group||'').trim(),
+      tags: Array.isArray(e.tags)? e.tags.map(t=>String(t)) : normalizeTags(e.tags),
+      desc: String(e.desc||'').trim(),
+      url: String(e.url||''),
+      createdAt: Number(e.createdAt||Date.now()),
+      updatedAt: Number(e.updatedAt||e.createdAt||Date.now())
+    }));
+  }
+  function initAvatars(initial, lastId, lastGroup, search){
+    const list = sanitizeAvatars(initial);
+    renderAvatarGrid(list, lastGroup, search);
+    if (lastId) {
+      const found = list.find(a=> a.id === lastId);
+      if (found) selectAvatar(found, list);
+    }
+  }
+  function renderAvatarGrid(list, groupFilter, search){
+    const grid = document.getElementById('av-grid'); if(!grid) return;
+    const gf = String(groupFilter||'').trim().toLowerCase();
+    const q = String(search||'').trim().toLowerCase();
+    let filtered = list.filter(a => {
+      const passesGroup = !gf || gf === 'all' || (gf === 'ungrouped' ? !a.group : a.group.toLowerCase() === gf);
+      if (!passesGroup) return false;
+      if (!q) return true;
+      const hay = [a.name, a.group, a.desc, ...(a.tags||[])].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    // Sort
+    const sortVal = document.getElementById('av-sort')?.value || 'name';
+    const byName = (a,b)=> (a.name||'').localeCompare(b.name||'', undefined, { sensitivity:'base' });
+    if (sortVal === 'name') filtered.sort(byName);
+    else if (sortVal === 'updated') filtered.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
+    else if (sortVal === 'created') filtered.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+    grid.innerHTML = '';
+    if (!filtered.length){
+      const empty = document.createElement('div'); empty.className='muted'; empty.textContent = 'No avatars.'; grid.appendChild(empty); updateAvatarCount(0, list.length); return;
+    }
+    const bulk = !!document.getElementById('av-bulk-toggle')?.checked;
+    const selectedSet = window.__avSel || (window.__avSel = new Set());
+    for (const a of filtered){
+      const card = document.createElement('div');
+      card.style.cssText='position:relative;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);font-size:11px;';
+      card.innerHTML = `
+        <img src="${a.url||''}" alt="${a.name}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;${a.url?'':'display:none'}"/>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${a.name||'(unnamed)'}</span>
+      `;
+      if (bulk){
+        const cb=document.createElement('input'); cb.type='checkbox'; cb.style.cssText='position:absolute;top:6px;left:6px;'; cb.checked = selectedSet.has(a.id);
+        cb.addEventListener('change', ()=>{ if(cb.checked) selectedSet.add(a.id); else selectedSet.delete(a.id); updateBulkButtons(); });
+        card.appendChild(cb);
+      } else {
+        card.style.cursor='pointer';
+        card.addEventListener('click', ()=>{ selectAvatar(a, list); chrome.storage.sync.set({ [STORAGE_KEYS.avatarLast]: a.id }); });
+      }
+      grid.appendChild(card);
+    }
+    updateBulkButtons();
+    updateAvatarCount(filtered.length, list.length);
+    renderAvatarGroupFilter(list, groupFilter);
+  }
+  function updateBulkButtons(){
+    const bulk = !!document.getElementById('av-bulk-toggle')?.checked;
+    const del = document.getElementById('av-btn-bulk-delete');
+    const exp = document.getElementById('av-btn-export-selected');
+    const clr = document.getElementById('av-btn-clear-selection');
+    if (!bulk){ if (del) del.disabled=true; if (exp) exp.disabled=true; if (clr) clr.disabled=true; return; }
+    const sel = window.__avSel || new Set();
+    const has = sel.size>0; if (del) del.disabled=!has; if (exp) exp.disabled=!has; if (clr) clr.disabled=!has;
+  }
+  function updateAvatarCount(shown, total){ const el=document.getElementById('av-count'); if(el) el.textContent = `${shown}/${total}`; }
+  function renderAvatarGroupFilter(list, groupFilter){
+    const sel=document.getElementById('av-group-filter'); if(!sel) return;
+    const groups = Array.from(new Set(list.map(a=>a.group).filter(Boolean))).sort((a,b)=> a.localeCompare(b, undefined,{sensitivity:'base'}));
+    const prev = sel.value;
+    sel.innerHTML='';
+    const opts=[{v:'all',t:'All'},{v:'ungrouped',t:'Ungrouped'},...groups.map(g=>({v:g.toLowerCase(), t:g}))];
+    for(const o of opts){ const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; sel.appendChild(opt); }
+    // Restore selection preference
+    const target = (groupFilter||prev||'all').toLowerCase();
+    if (opts.some(o=>o.v===target)) sel.value=target; else sel.value='all';
+  }
+  function selectAvatar(avatar, list){
+    const body=document.getElementById('av-preview-body'); const empty=document.getElementById('av-preview-empty'); if(!body||!empty) return;
+    empty.style.display='none'; body.style.display='block';
+    const img=document.getElementById('av-preview-image'); if(img){ img.src=avatar.url||''; }
+    if(document.getElementById('av-meta-name')) document.getElementById('av-meta-name').value = avatar.name||'';
+    if(document.getElementById('av-meta-group')) document.getElementById('av-meta-group').value = avatar.group||'';
+    if(document.getElementById('av-meta-tags')) document.getElementById('av-meta-tags').value = (avatar.tags||[]).join(', ');
+    if(document.getElementById('av-meta-desc')) document.getElementById('av-meta-desc').value = avatar.desc||'';
+    chrome.storage.sync.set({ [STORAGE_KEYS.avatarLast]: avatar.id });
+    // Wire Save meta
+    const saveBtn=document.getElementById('av-btn-save-meta'); if(saveBtn){
+      saveBtn.onclick = ()=>{
+        loadAvatars(entries=>{
+          const idx = entries.findIndex(e=> e.id===avatar.id); if(idx<0) return;
+          entries[idx].name = String(document.getElementById('av-meta-name')?.value||'').trim();
+          entries[idx].group = String(document.getElementById('av-meta-group')?.value||'').trim();
+          entries[idx].tags = normalizeTags(document.getElementById('av-meta-tags')?.value||'');
+          entries[idx].desc = String(document.getElementById('av-meta-desc')?.value||'').trim();
+          entries[idx].updatedAt = Date.now();
+          saveAvatars(entries, ()=> renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value));
+        });
+      };
+    }
+    const delBtn=document.getElementById('av-btn-delete'); if(delBtn){
+      delBtn.onclick = ()=>{
+        if(!confirm('Delete this avatar?')) return;
+        loadAvatars(entries=>{
+          const next = entries.filter(e=> e.id!==avatar.id);
+          saveAvatars(next, ()=>{
+            renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+            const body=document.getElementById('av-preview-body'); const empty=document.getElementById('av-preview-empty'); if(body&&empty){ body.style.display='none'; empty.style.display='block'; }
+          });
+        });
+      };
+    }
+    const replaceBtn=document.getElementById('av-btn-replace'); if(replaceBtn){
+      replaceBtn.onclick = ()=>{
+        // Use staged dataUrl from av-image-url dataset if present
+        const staged = document.getElementById('av-image-url')?.dataset?.dataUrl || '';
+        if(!staged){ alert('Load/paste a new image first.'); return; }
+        uploadAvatarDataUrl(staged, (url)=>{
+          loadAvatars(entries=>{
+            const idx = entries.findIndex(e=> e.id===avatar.id); if(idx<0) return;
+            entries[idx].url = url; entries[idx].updatedAt = Date.now();
+            saveAvatars(entries, ()=>{
+              delete document.getElementById('av-image-url')?.dataset?.dataUrl;
+              document.getElementById('av-image-url').value = url;
+              renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+              selectAvatar(entries[idx], entries);
+            });
+          });
+        });
+      };
+    }
+    const copy2=document.getElementById('av-btn-copy-url2'); if(copy2){ copy2.onclick = ()=>{ if(avatar.url) navigator.clipboard.writeText(avatar.url); }; }
+    const copyBB=document.getElementById('av-btn-copy-bb'); if(copyBB){ copyBB.onclick = ()=>{ if(avatar.url){ const bb=`[img]${avatar.url}[/img]`; navigator.clipboard.writeText(bb); } }; }
+    const dl=document.getElementById('av-btn-download'); if(dl){ dl.onclick = ()=>{ if(avatar.url){ try{ chrome.downloads.download({ url: avatar.url, filename: (avatar.name||'avatar')+'.png' }); }catch{ window.open(avatar.url, '_blank'); } } }; }
+  }
+  // Upload & Save new avatar
+  if (document.getElementById('av-btn-upload')){
+    document.getElementById('av-btn-upload').addEventListener('click', ()=>{
+      const name = String(document.getElementById('av-name')?.value||'').trim(); if(!name){ alert('Enter a name.'); return; }
+      const group = String(document.getElementById('av-group')?.value||'').trim();
+      const tagsRaw = document.getElementById('av-tags')?.value||'';
+      const desc = String(document.getElementById('av-desc')?.value||'').trim();
+      const staged = document.getElementById('av-image-url')?.dataset?.dataUrl || '';
+      if(!staged){ alert('Load or paste an image first.'); return; }
+      uploadAvatarDataUrl(staged, (url)=>{
+        loadAvatars(entries=>{
+          const cap = avatarCapValue();
+          const now = Date.now();
+          const next = enforceAvatarCap([...entries, { id: __uuid(), name, group, tags: normalizeTags(tagsRaw), desc, url, createdAt: now, updatedAt: now }], cap);
+          saveAvatars(next, ()=>{
+            delete document.getElementById('av-image-url')?.dataset?.dataUrl;
+            document.getElementById('av-image-url').value = url;
+            renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+          });
+        });
+      });
+    });
+  }
+  // Avatar file load controls
+  if (document.getElementById('av-btn-load-file')){
+    document.getElementById('av-btn-load-file').addEventListener('click', ()=> document.getElementById('av-file-input')?.click());
+    document.getElementById('av-file-input').addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      const r = new FileReader(); r.onload = ()=> stageAvatarDataUrl(r.result); r.readAsDataURL(f);
+    });
+  }
+  if (document.getElementById('av-btn-clear-image')){
+    document.getElementById('av-btn-clear-image').addEventListener('click', ()=>{
+      const img=document.getElementById('av-image-preview'); if(img){ img.src=''; img.style.display='none'; }
+      const iu=document.getElementById('av-image-url'); if(iu){ iu.value=''; delete iu.dataset.dataUrl; }
+    });
+  }
+  // Drag/drop zone
+  const avDrop = document.getElementById('av-drop-zone');
+  if (avDrop){
+    avDrop.addEventListener('click', ()=> document.getElementById('av-btn-load-file')?.click());
+    avDrop.addEventListener('dragover', (e)=>{ e.preventDefault(); avDrop.classList.add('dragover'); });
+    avDrop.addEventListener('dragleave', ()=> avDrop.classList.remove('dragover'));
+    avDrop.addEventListener('drop', (e)=>{
+      e.preventDefault(); avDrop.classList.remove('dragover');
+      const dt = e.dataTransfer; if(!dt) return;
+      const file = (dt.files && dt.files[0]) || null;
+      if (file && file.type && file.type.startsWith('image/')){
+        const reader = new FileReader(); reader.onload = ()=> stageAvatarDataUrl(reader.result); reader.readAsDataURL(file);
+      }
+    });
+  }
+  // Paste to avatar staging
+  document.addEventListener('paste', (e)=>{
+    if (!document.getElementById('view-avatars') || document.getElementById('view-avatars').style.display==='none') return; // only when avatar tab visible
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const it of items){
+      if (it.kind === 'file'){
+        const f = it.getAsFile(); if(f && f.type && f.type.startsWith('image/')){
+          const r=new FileReader(); r.onload=()=> stageAvatarDataUrl(r.result); r.readAsDataURL(f); e.preventDefault(); break;
+        }
+      }
+    }
+  });
+  function stageAvatarDataUrl(dataUrl){
+    if(!dataUrl) return; const iu=document.getElementById('av-image-url'); const img=document.getElementById('av-image-preview'); if(iu){ iu.value=''; iu.dataset.dataUrl=dataUrl; } if(img){ img.src=dataUrl; img.style.display='block'; }
+  }
+  // Upload logic (reuse existing fallback chain)
+  function uploadAvatarDataUrl(dataUrl, done){
+    const status=document.getElementById('av-upload-status'); if(status) status.textContent='Trying imgbb…';
+    (async()=>{
+      let url='';
+      try { url = await uploadDataUrlImgBB(dataUrl); }
+      catch(e1){ if(status) status.textContent='imgbb failed, trying catbox…'; try { url = await uploadDataUrlCatbox(dataUrl); } catch(e2){ if(status) status.textContent='All uploads failed.'; throw e2; } }
+      if(status) status.textContent='Done.'; done && done(url);
+    })().catch(e=>{ alert('Upload failed: '+(e&&e.message||e)); });
+  }
+  // Filters & search wiring
+  if (document.getElementById('av-group-filter')){
+    document.getElementById('av-group-filter').addEventListener('change', ()=>{
+      const group = document.getElementById('av-group-filter').value;
+      chrome.storage.sync.set({ [STORAGE_KEYS.avatarLastGroup]: group });
+      loadAvatars(entries=> renderAvatarGrid(entries, group, document.getElementById('av-search')?.value));
+    });
+  }
+  if (document.getElementById('av-sort')){
+    document.getElementById('av-sort').addEventListener('change', ()=>{
+      loadAvatars(entries=> renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value));
+    });
+  }
+  if (document.getElementById('av-bulk-toggle')){
+    document.getElementById('av-bulk-toggle').addEventListener('change', ()=>{
+      loadAvatars(entries=> renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value));
+    });
+  }
+  if (document.getElementById('av-btn-clear-selection')){
+    document.getElementById('av-btn-clear-selection').addEventListener('click', ()=>{ window.__avSel && window.__avSel.clear(); updateBulkButtons(); loadAvatars(entries=> renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value)); });
+  }
+  if (document.getElementById('av-btn-bulk-delete')){
+    document.getElementById('av-btn-bulk-delete').addEventListener('click', ()=>{
+      const sel = window.__avSel || new Set(); if (!sel.size) return;
+      if (!confirm(`Delete ${sel.size} selected avatar(s)?`)) return;
+      loadAvatars(entries=>{
+        const next = entries.filter(e=> !sel.has(e.id));
+        saveAvatars(next, ()=>{ window.__avSel.clear(); updateBulkButtons(); renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value); });
+      });
+    });
+  }
+  if (document.getElementById('av-btn-export-selected')){
+    document.getElementById('av-btn-export-selected').addEventListener('click', ()=>{
+      const sel = window.__avSel || new Set(); if (!sel.size) return;
+      loadAvatars(entries=>{
+        const chosen = entries.filter(e=> sel.has(e.id));
+        const blob = new Blob([JSON.stringify({ yl50_avatars: chosen }, null, 2)], { type:'application/json' });
+        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='avatars-selected.json'; a.click(); setTimeout(()=> URL.revokeObjectURL(url), 1200);
+      });
+    });
+  }
+  if (document.getElementById('av-btn-export-json')){
+    document.getElementById('av-btn-export-json').addEventListener('click', ()=>{
+      loadAvatars(entries=>{
+        chrome.storage.sync.get({ [STORAGE_KEYS.avatarCap]: '100' }, r=>{
+          const data = { yl50_avatars: entries, yl50_avatar_cap: r[STORAGE_KEYS.avatarCap]||'100' };
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+          const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='yowishlist50-avatars.json'; a.click(); setTimeout(()=> URL.revokeObjectURL(url), 1200);
+        });
+      });
+    });
+  }
+  if (document.getElementById('av-btn-import-json')){
+    document.getElementById('av-btn-import-json').addEventListener('click', ()=> document.getElementById('av-import-file')?.click());
+    document.getElementById('av-import-file')?.addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      const r = new FileReader(); r.onload = ()=>{
+        try{
+          const obj = JSON.parse(String(r.result||'{}'));
+          const avatars = sanitizeAvatars(Array.isArray(obj.yl50_avatars)? obj.yl50_avatars : []);
+          const cap = String(obj.yl50_avatar_cap || document.getElementById('av-cap-select')?.value || '100');
+          chrome.storage.sync.set({ [STORAGE_KEYS.avatarCap]: cap }, ()=>{
+            const final = enforceAvatarCap(avatars, cap);
+            saveAvatars(final, ()=>{
+              renderAvatarGrid(final, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+              alert('Avatars import complete.');
+            });
+          });
+        } catch(e){ alert('Import failed: ' + (e&&e.message||e)); }
+      };
+      r.readAsText(f);
+    });
+  }
+  // Placeholder for compression toggle (future integration). Currently no-op except stored value.
+  if (document.getElementById('av-compress')){
+    document.getElementById('av-compress').addEventListener('change', ()=>{
+      const on = !!document.getElementById('av-compress').checked;
+      // In future, integrate pngquant/Canvas encoding tweaks before upload.
+      // Stored via localStorage since it is local-only preference
+      try{ localStorage.setItem('yl50_avatar_compress', on ? '1' : '0'); }catch{}
+    });
+    try{ const on = localStorage.getItem('yl50_avatar_compress')==='1'; document.getElementById('av-compress').checked = on; }catch{}
+  }
+  if (document.getElementById('av-search')){
+    let searchTimer=null;
+    document.getElementById('av-search').addEventListener('input', ()=>{
+      clearTimeout(searchTimer); searchTimer=setTimeout(()=>{
+        const val=document.getElementById('av-search').value;
+        chrome.storage.sync.set({ [STORAGE_KEYS.avatarSearch]: val });
+        loadAvatars(entries=> renderAvatarGrid(entries, document.getElementById('av-group-filter')?.value, val));
+      }, 220);
+    });
+  }
+  if (document.getElementById('av-cap-select')){
+    document.getElementById('av-cap-select').addEventListener('change', ()=>{
+      const cap=document.getElementById('av-cap-select').value;
+      chrome.storage.sync.set({ [STORAGE_KEYS.avatarCap]: cap });
+      loadAvatars(entries=>{
+        const trimmed=enforceAvatarCap(entries, cap);
+        if(trimmed.length!==entries.length){ saveAvatars(trimmed, ()=> renderAvatarGrid(trimmed, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value)); }
+        else renderAvatarGrid(trimmed, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+      });
     });
   }
   function ensureContentReady(tabId, onReady){
@@ -98,8 +453,21 @@
     sendUpdate(tabId, () => chrome.tabs.sendMessage(tabId, { type }, (res) => { updateStartStatus(res); }));
   }
   $('#btn-preview').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-preview')); });
-  $('#btn-export-crop').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-export-crop')); });
+  if (document.getElementById('btn-export-crop')){
+    document.getElementById('btn-export-crop').addEventListener('click', () => {
+      withReady((tabId) => run(tabId, 'yl50-export-crop'));
+      chrome.storage.sync.get({ [STORAGE_KEYS.autoSwitchShare]: true }, (r) => {
+        if (r[STORAGE_KEYS.autoSwitchShare]) {
+          setTimeout(() => {
+            const shareTab = document.getElementById('tab-share');
+            if (shareTab) shareTab.click();
+          }, 1600);
+        }
+      });
+    });
+  }
   $('#btn-restore').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-restore')); });
+  // Generic export button (non-crop) if added later could also trigger auto-switch by similar pattern.
   $('#btn-pick').addEventListener('click', () => { withReady((tabId) => run(tabId, 'yl50-pick')); });
 
   // Press Enter in Scope to find and highlight the matching section
@@ -125,39 +493,51 @@
 
   // Tabs
   function showTab(id){
-    $('#view-main').style.display = (id==='main')? '' : 'none';
-    $('#view-share').style.display = (id==='share')? '' : 'none';
-    $('#view-settings').style.display = (id==='settings')? '' : 'none';
-    // Active tab classes
-    ['tab-main','tab-share','tab-settings'].forEach(tid=>{ const el = document.getElementById(tid); if(!el) return; el.classList.remove('active'); });
+    const map = {
+      home: '#view-home',
+      avatars: '#view-avatars',
+      main: '#view-main',
+      share: '#view-share',
+      images: '#view-images',
+      settings: '#view-settings'
+    };
+    for (const key of Object.keys(map)){
+      const sel = map[key]; const el = document.querySelector(sel); if (!el) continue;
+      el.style.display = (key === id) ? '' : 'none';
+    }
+    // Active tab classes (collect current tabs)
+    ['home','avatars','main','share','images','settings'].forEach(t => {
+      const el = document.getElementById('tab-'+t); if (el) el.classList.remove('active');
+    });
     const active = document.getElementById('tab-'+id); if(active) active.classList.add('active');
     chrome.storage.sync.set({ [STORAGE_KEYS.lastTab]: id });
   }
-  $('#tab-main').addEventListener('click', () => showTab('main'));
-  $('#tab-share').addEventListener('click', () => showTab('share'));
+  if ($('#tab-home')) $('#tab-home').addEventListener('click', () => showTab('home'));
+  if ($('#tab-avatars')) $('#tab-avatars').addEventListener('click', () => showTab('avatars'));
+  if ($('#tab-main')) $('#tab-main').addEventListener('click', () => showTab('main'));
+  if ($('#tab-share')) $('#tab-share').addEventListener('click', () => showTab('share'));
+  if ($('#tab-images')) $('#tab-images').addEventListener('click', () => showTab('images'));
   if ($('#tab-settings')) $('#tab-settings').addEventListener('click', () => showTab('settings'));
-  chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'main' }, (r)=> {
-    showTab(r[STORAGE_KEYS.lastTab] || 'main');
+  chrome.storage.sync.get({ [STORAGE_KEYS.lastTab]:'home' }, (r)=> {
+    const last = r[STORAGE_KEYS.lastTab];
+    // Fallback migration: if last was an old value not in new set, map 'main'->'main', 'share'->'share'
+    const valid = ['home','avatars','main','share','images','settings'];
+    showTab(valid.includes(last) ? last : 'home');
     // After initial tab selection, size popup to the bottom of the Main tab
     // so Main shows without inner scrolling; other tabs will scroll inside .app if needed.
     const sizePopupToMain = () => {
       const app = document.querySelector('.app');
       const vm = document.getElementById('view-main');
-      const vs = document.getElementById('view-share');
-      const vset = document.getElementById('view-settings');
       if (!app || !vm) return;
-      // Preserve current visibility and sizing
-      const prev = {
-        vm: vm.style.display,
-        vs: vs ? vs.style.display : undefined,
-        vset: vset ? vset.style.display : undefined,
-        height: app.style.height,
-        maxHeight: app.style.maxHeight
-      };
+      // Track all panels to restore later
+      const panels = [
+        'view-home','view-avatars','view-main','view-share','view-images','view-settings'
+      ].map(id => ({ id, el: document.getElementById(id) })).filter(x => x.el);
+      // Store the exact display value, including empty string ("") which is significant
+      const prevDisplay = new Map(panels.map(x => [x.id, x.el.style.display]));
+      const prevSize = { height: app.style.height, maxHeight: app.style.maxHeight };
       // Show Main only for measurement
-      vm.style.display = '';
-      if (vs) vs.style.display = 'none';
-      if (vset) vset.style.display = 'none';
+      panels.forEach(p => { p.el.style.display = (p.id === 'view-main') ? '' : 'none'; });
       // Temporarily remove max-height clamp so popup can expand while measuring
       app.style.maxHeight = 'none';
       app.style.height = 'auto';
@@ -165,12 +545,18 @@
       void app.offsetHeight; // reflow
       const desired = app.scrollHeight;
       // Restore tab visibility
-      vm.style.display = prev.vm || '';
-      if (vs) vs.style.display = prev.vs ?? 'none';
-      if (vset) vset.style.display = prev.vset ?? 'none';
+      panels.forEach(p => {
+        if (prevDisplay.has(p.id)) {
+          // Restore exactly what was present before measurement
+          p.el.style.display = prevDisplay.get(p.id);
+        } else {
+          // Fallback only if we somehow didn't capture it
+          p.el.style.display = (p.id === 'view-home') ? '' : 'none';
+        }
+      });
       // Apply measured height so popup lengthens to fit Main; then re-apply max-height rule
       app.style.height = desired + 'px';
-      app.style.maxHeight = prev.maxHeight || '';
+      app.style.maxHeight = prevSize.maxHeight || '';
     };
     // Run after layout settles; repeat once to catch async font/layout tweaks
     requestAnimationFrame(()=>{ sizePopupToMain(); setTimeout(sizePopupToMain, 250); });
@@ -451,6 +837,10 @@
   }
   // Paste image from clipboard
   document.addEventListener('paste', (e)=>{
+    // Only process for Wish Lists when that view is visible; otherwise Avatars paste handler may take over
+    const vs = document.getElementById('view-share');
+    const shareVisible = !!vs && getComputedStyle(vs).display !== 'none';
+    if (!shareVisible) return;
     const items = (e.clipboardData && e.clipboardData.items) || [];
     for (const it of items){
       if (it.kind === 'file'){
@@ -537,6 +927,111 @@
     if (!url) return includeTitle ? `[b]${t}[/b]\n(no image)` : `(no image)`;
     return includeTitle ? `[b]${t}[/b]\n[img]${url}[/img]` : `[img]${url}[/img]`;
   }
+  // ============ Images tab logic (mirrors Wish Lists) ============
+  function imagesNormalizeTitle(t){ return String(t||'').trim(); }
+  function imagesTitleExists(entries, t){ const nt = imagesNormalizeTitle(t).toLowerCase(); return entries.some(e => imagesNormalizeTitle(e.title).toLowerCase() === nt); }
+  function imagesNextUniqueTitle(entries, base){
+    let t = imagesNormalizeTitle(base) || 'Untitled';
+    if (!imagesTitleExists(entries, t)) return t;
+    for (let i=2; i<1000; i++){ const cand = `${t}${i}`; if (!imagesTitleExists(entries, cand)) return cand; }
+    return `${t}-${Date.now()}`;
+  }
+  function imagesLoadEntries(cb){ chrome.storage.sync.get({ [STORAGE_KEYS.imagesSavedEntries]: [] }, r => { const arr = Array.isArray(r[STORAGE_KEYS.imagesSavedEntries])? r[STORAGE_KEYS.imagesSavedEntries] : []; cb(arr.map(e=>({ title:String(e.title||'').trim(), url:String(e.url||''), updatedAt:Number(e.updatedAt||0), createdAt:Number(e.createdAt||Date.now()) }))); }); }
+  function imagesSaveEntries(list, cb){ chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedEntries]: list }, ()=> cb && cb()); }
+  function imagesFormatDate(ts){ try{ return new Date(ts||Date.now()).toISOString().slice(0,10); }catch{return '';} }
+  function imagesRenderSelect(entries, selectTitle){
+    const sel = document.getElementById('images-saved-select'); if(!sel) return;
+    sel.innerHTML='';
+    const list = [...(entries||[])].sort((a,b)=> a.title.localeCompare(b.title, undefined, { sensitivity:'base' }));
+    for(const e of list){ const opt=document.createElement('option'); opt.value=e.title; opt.textContent = e.updatedAt? `${e.title} — ${imagesFormatDate(e.updatedAt)}` : e.title; opt.dataset.url=e.url||''; sel.appendChild(opt); }
+    if (selectTitle && list.some(x=> x.title===selectTitle)) sel.value=selectTitle; else {
+      chrome.storage.sync.get({ [STORAGE_KEYS.imagesSavedLast]: '' }, r=>{ const last=r[STORAGE_KEYS.imagesSavedLast]||''; if(last && list.some(x=>x.title===last)) sel.value=last; });
+    }
+  }
+  function imagesSetNoImageHint(){
+    const url = (document.getElementById('images-image-url')?.value||'').trim();
+    const hint = document.getElementById('images-no-image-hint'); if(hint) hint.style.display = url ? 'none' : 'block';
+    const btnUrl = document.getElementById('images-btn-copy-url'); if(btnUrl) btnUrl.disabled = !url;
+    const btnForum = document.getElementById('images-btn-copy-forum'); if(btnForum) btnForum.disabled = !url;
+  }
+  function imagesUpdatePreview(entry){
+    const url = (entry && entry.url) || '';
+    const img = document.getElementById('images-image-preview'); if(img){ img.src=url||''; img.style.display = url ? 'block' : 'none'; }
+    const iu = document.getElementById('images-image-url'); if(iu){ iu.value=url; delete iu.dataset?.dataUrl; }
+    const fl = document.getElementById('images-forum-link'); if(fl){ const t=document.getElementById('images-saved-title')?.value||''; const inc=!!document.getElementById('images-include-title')?.checked; fl.value = inc ? makeForumLink(url, t) : `[img]${url}[/img]`; }
+    imagesSetNoImageHint();
+  }
+  function imagesStageDataUrl(dataUrl){ if(!dataUrl) return; const iu=document.getElementById('images-image-url'); const img=document.getElementById('images-image-preview'); if(iu){ iu.value=''; iu.dataset.dataUrl=dataUrl; } if(img){ img.src=dataUrl; img.style.display='block'; } imagesSetNoImageHint(); }
+  function initImages(initial, last){ imagesRenderSelect(initial||[], last||''); imagesSetNoImageHint(); }
+
+  // Images: file load
+  if (document.getElementById('images-btn-load-file')){
+    document.getElementById('images-btn-load-file').addEventListener('click', ()=> document.getElementById('images-file-input')?.click());
+    document.getElementById('images-file-input')?.addEventListener('change', (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=> imagesStageDataUrl(r.result); r.readAsDataURL(f); });
+  }
+  // Images: clear
+  if (document.getElementById('images-btn-clear-image')){
+    document.getElementById('images-btn-clear-image').addEventListener('click', ()=>{ const img=document.getElementById('images-image-preview'); if(img){ img.src=''; img.style.display='none'; } const iu=document.getElementById('images-image-url'); if(iu){ iu.value=''; delete iu.dataset.dataUrl; } const fl=document.getElementById('images-forum-link'); if(fl){ fl.value=''; } imagesSetNoImageHint(); });
+  }
+  // Images: drag/drop
+  const imagesDrop = document.getElementById('images-drop-zone');
+  if (imagesDrop){ imagesDrop.addEventListener('click', ()=> document.getElementById('images-btn-load-file')?.click()); imagesDrop.addEventListener('dragover', (e)=>{ e.preventDefault(); imagesDrop.classList.add('dragover'); }); imagesDrop.addEventListener('dragleave', ()=> imagesDrop.classList.remove('dragover')); imagesDrop.addEventListener('drop', (e)=>{ e.preventDefault(); imagesDrop.classList.remove('dragover'); const dt=e.dataTransfer; if(!dt) return; const f=(dt.files&&dt.files[0])||null; if(f && f.type && f.type.startsWith('image/')){ const r=new FileReader(); r.onload=()=> imagesStageDataUrl(r.result); r.readAsDataURL(f); } }); }
+  // Images: paste
+  document.addEventListener('paste', (e)=>{
+    const v = document.getElementById('view-images'); const visible = !!v && getComputedStyle(v).display !== 'none'; if(!visible) return;
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for(const it of items){ if(it.kind==='file'){ const f=it.getAsFile(); if(f && f.type && f.type.startsWith('image/')){ const r=new FileReader(); r.onload=()=> imagesStageDataUrl(r.result); r.readAsDataURL(f); e.preventDefault(); break; } } }
+  });
+  // Images: upload
+  if (document.getElementById('images-btn-upload')){
+    document.getElementById('images-btn-upload').addEventListener('click', async()=>{
+      const status=document.getElementById('images-upload-status');
+      try{
+        const staged = document.getElementById('images-image-url')?.dataset?.dataUrl || '';
+        if(!staged){ alert('No image loaded.'); return; }
+        document.getElementById('images-btn-upload').disabled=true; document.getElementById('images-btn-upload').textContent='Uploading…';
+        if(status) status.textContent='Trying imgbb…';
+        let url='';
+        try{ url = await uploadDataUrlImgBB(staged); }
+        catch(e1){ if(status) status.textContent='imgbb failed, trying catbox…'; url = await uploadDataUrlCatbox(staged); }
+        const iu=document.getElementById('images-image-url'); if(iu){ iu.value=url; delete iu.dataset.dataUrl; }
+        // Save to entry based on typed or selected title
+        const typed = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||'');
+        imagesLoadEntries((entries)=>{
+          let idx = typed ? entries.findIndex(e=> imagesNormalizeTitle(e.title)===typed) : -1;
+          if (idx < 0){ const sel=document.getElementById('images-saved-select'); if(sel && sel.value){ idx = entries.findIndex(e=> e.title===sel.value); } }
+          if (idx >= 0){ entries[idx].url=url; entries[idx].updatedAt=Date.now(); imagesSaveEntries(entries, ()=>{ imagesLoadEntries((fresh)=>{ imagesRenderSelect(fresh, entries[idx].title); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: entries[idx].title }); }); }); if(!typed){ const input=document.getElementById('images-saved-title'); if(input) input.value=entries[idx].title; } if(status) status.textContent='Done.'; }
+          else if (typed){ const title = imagesNextUniqueTitle(entries, typed); const now=Date.now(); const next=[...entries, { title, url, updatedAt:now, createdAt:now }]; imagesSaveEntries(next, ()=>{ imagesLoadEntries((fresh)=>{ imagesRenderSelect(fresh, title); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: title }); }); }); if(status) status.textContent='Saved new entry.'; }
+          else { if(status) status.textContent='Uploaded (not saved to a title).'; }
+          const fl=document.getElementById('images-forum-link'); if(fl){ const inc=!!document.getElementById('images-include-title')?.checked; const t=document.getElementById('images-saved-title')?.value||''; fl.value = inc ? makeForumLink(url, t) : `[img]${url}[/img]`; }
+          imagesSetNoImageHint();
+        });
+      } catch(e){ if(status) status.textContent='Upload failed.'; alert('Upload failed: ' + (e&&e.message||e)); }
+      finally { const b=document.getElementById('images-btn-upload'); if(b){ b.disabled=false; b.textContent='Upload'; } }
+    });
+  }
+  // Images: copy actions and include-title
+  if (document.getElementById('images-btn-copy-url')) document.getElementById('images-btn-copy-url').addEventListener('click', ()=>{ const v=document.getElementById('images-image-url')?.value; if(v) navigator.clipboard.writeText(v); });
+  if (document.getElementById('images-btn-copy-forum')) document.getElementById('images-btn-copy-forum').addEventListener('click', ()=>{ const v=document.getElementById('images-forum-link')?.value; if(v) navigator.clipboard.writeText(v); });
+  if (document.getElementById('images-include-title')) document.getElementById('images-include-title').addEventListener('change', ()=>{
+    const include = !!document.getElementById('images-include-title').checked; chrome.storage.sync.set({ [STORAGE_KEYS.imagesIncludeTitle]: include }); const url=document.getElementById('images-image-url')?.value||''; const t=document.getElementById('images-saved-title')?.value||''; const fl=document.getElementById('images-forum-link'); if(fl){ fl.value = include ? makeForumLink(url, t) : `[img]${url}[/img]`; }
+  });
+  // Images: save/rename/delete/load
+  if (document.getElementById('images-btn-save')) document.getElementById('images-btn-save').addEventListener('click', ()=>{
+    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ alert('Enter a title to save.'); return; }
+    imagesLoadEntries((entries)=>{ const title = imagesNextUniqueTitle(entries, base); const now=Date.now(); const next=[...entries, { title, url:'', updatedAt:0, createdAt:now }]; imagesSaveEntries(next, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh, title); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: title }); })); });
+  });
+  if (document.getElementById('images-btn-rename')) document.getElementById('images-btn-rename').addEventListener('click', ()=>{
+    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value){ alert('Select an entry to rename.'); return; }
+    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ alert('Enter a new title.'); return; }
+    imagesLoadEntries((entries)=>{ const idx=entries.findIndex(e=> e.title===sel.value); if(idx<0) return; let newTitle=base; if(imagesNormalizeTitle(newTitle).toLowerCase() !== imagesNormalizeTitle(entries[idx].title).toLowerCase()){ newTitle = imagesNextUniqueTitle(entries.filter((_,i)=>i!==idx), base); } entries[idx].title=newTitle; imagesSaveEntries(entries, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh, newTitle); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: newTitle }); })); });
+  });
+  if (document.getElementById('images-btn-delete')) document.getElementById('images-btn-delete').addEventListener('click', ()=>{
+    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value) return; imagesLoadEntries((entries)=>{ const next=entries.filter(e=> e.title!==sel.value); imagesSaveEntries(next, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh); imagesUpdatePreview(null); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: '' }); })); });
+  });
+  if (document.getElementById('images-btn-load')) document.getElementById('images-btn-load').addEventListener('click', ()=>{
+    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value) return; imagesLoadEntries((entries)=>{ const entry=entries.find(e=> e.title===sel.value); if(!entry) return; const input=document.getElementById('images-saved-title'); if(input) input.value=entry.title; imagesUpdatePreview(entry); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: entry.title }); });
+  });
   if (document.getElementById('btn-upload')){
     document.getElementById('btn-upload').addEventListener('click', async()=>{
       const status = document.getElementById('upload-status');

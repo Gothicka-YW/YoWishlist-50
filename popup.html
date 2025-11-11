@@ -28,6 +28,8 @@
         --btn-grad-start: #8a41ff;  /* top */
         --btn-grad-mid:   #6f34f0;  /* center */
         --btn-grad-end:   #274cdb;  /* bottom (toward dark blue) */
+        /* Unified popup width (consistent across all tabs) */
+        --popup-width: 640px;
       }
       /* Themes */
   body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); --btn-grad-start:#5b97ff; --btn-grad-mid:#2f71ff; --btn-grad-end:#1c3aa9; }
@@ -38,7 +40,10 @@
       *{ box-sizing: border-box; }
       html, body{ margin:0; overflow:hidden; }
       body{
-        min-width:360px;
+        /* Fixed width for consistent layout across tabs */
+        width: var(--popup-width);
+        min-width: var(--popup-width);
+        max-width: var(--popup-width);
         min-height: 320px;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
         color: var(--fg);
@@ -65,6 +70,8 @@
         /* Keep scrollbar space reserved to avoid width shifts when switching tabs */
         scrollbar-gutter: stable both-edges;
         overscroll-behavior: contain;
+        /* Match card width to popup minus outer padding */
+        width: calc(var(--popup-width) - 4px);
       }
       /* Styled, inside-the-card scrollbar matching popup aesthetics */
       .app{ scrollbar-width: thin; scrollbar-color: var(--btn-border) var(--surface-2); }
@@ -111,7 +118,14 @@
         padding: 8px 10px;
         font-size: 13px;
         font-weight: 700;
-        width: 100%;
+        /* Standard narrower buttons by default */
+        width: auto;
+        max-width: 200px;
+  display: inline-flex;
+        align-items: center;
+        justify-content: center;
+  /* Prevent buttons from expanding in flex rows (override inline flex:1) */
+  flex: 0 0 auto !important;
         cursor: pointer;
         box-shadow:
           0 8px 18px rgba(0,0,0,.18),            /* outer depth */
@@ -119,7 +133,10 @@
           inset 0 1px 0 rgba(255,255,255,.16),   /* top highlight */
           inset 0 -1px 0 rgba(0,0,0,.20);        /* bottom edge */
         transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
+        white-space: nowrap;
       }
+      /* Allow specific rows to have equally-sized full-width buttons despite the default narrow buttons */
+      .btn-grow{ flex: 1 1 0% !important; max-width: none !important; width: 100%; }
       button:hover{
         filter: brightness(1.03) saturate(1.02);
         box-shadow:
@@ -145,7 +162,7 @@
   #drop-zone.dragover{ border-color: var(--accent); color: var(--fg); background: rgba(0,0,0,0.02); }
       /* Tabs */
       #tabs{ gap:6px; margin-bottom:6px }
-  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:6px 9px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); font-size:13px; }
+  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:6px 9px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); font-size:13px; max-width: none; flex: 1 1 0% !important; }
   #tabs .tab:hover{ filter: brightness(1.02); }
   #tabs .tab.active{ background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-end)); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 4px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.10); }
     </style>
@@ -156,11 +173,127 @@
         <h1>YoWishlist 50</h1>
       </div>
       <div class="row" id="tabs">
-        <button id="tab-main" class="tab active" style="flex:1">Main</button>
-        <button id="tab-share" class="tab" style="flex:1">Share</button>
+        <button id="tab-home" class="tab active" style="flex:1">Home</button>
+        <button id="tab-avatars" class="tab" style="flex:1">Avatars</button>
+        <button id="tab-main" class="tab" style="flex:1">Screengrab</button>
+        <button id="tab-share" class="tab" style="flex:1">Wish Lists</button>
+        <button id="tab-images" class="tab" style="flex:1">Images</button>
         <button id="tab-settings" class="tab" style="flex:1">Settings</button>
       </div>
-    <div id="view-main">
+    <div id="view-home">
+      <div class="row" style="flex-direction:column; align-items:stretch; gap:8px">
+        <div style="display:flex; align-items:center; justify-content:center;">
+          <h2 style="
+            margin: 8px 0 6px 0;
+            font-size: 34px;
+            font-weight: 400;
+            font-family: 'Dancing Script', 'Segoe Script', cursive;
+            letter-spacing: .6px;
+            text-align: center;
+            color: var(--accent-contrast);
+            text-shadow: 0 2px 14px rgba(0,0,0,.28), 0 1px 4px rgba(0,0,0,.28);
+            background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+          ">Welcome to YoPlaceholder!</h2>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; padding:8px; border:1px solid var(--border); border-radius:12px; background: var(--surface-2)">
+          <h3 style="margin:0; font-size:16px">Avatars</h3>
+          <h3 style="margin:0; font-size:16px">Screengrab</h3>
+          <h3 style="margin:0; font-size:16px">Wish Lists</h3>
+          <h3 style="margin:0; font-size:16px">Images</h3>
+        </div>
+      </div>
+    </div>
+    <div id="view-avatars" style="display:none">
+      <!-- Create / Replace -->
+      <div class="row" style="display:flex; gap:6px; align-items:flex-start">
+        <input id="av-name" placeholder="Avatar name" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)" />
+        <input id="av-group" placeholder="Group (optional)" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)" />
+      </div>
+      <div class="row" style="display:flex; gap:6px; align-items:flex-start">
+        <input id="av-tags" placeholder="Tags (comma-separated)" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)" />
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <textarea id="av-desc" rows="2" placeholder="Description (optional)" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)"></textarea>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <div id="av-drop-zone">Drop avatar image here, paste (Ctrl+V), or use Load image file…</div>
+      </div>
+      <div class="row" style="display:flex; gap:6px">
+        <button id="av-btn-load-file" style="flex:1">Load image file…</button>
+        <button id="av-btn-clear-image" style="width:auto">Clear image</button>
+        <input id="av-file-input" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      </div>
+      <div class="row" style="display:flex; gap:10px; align-items:flex-start">
+        <div style="flex:1">
+          <img id="av-image-preview" alt="preview" style="max-width:100%; border-radius:10px; border:1px solid var(--border); display:none" />
+          <input id="av-image-url" readonly style="margin-top:6px; width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <div id="av-upload-status" class="muted" style="margin-top:6px; min-height:14px"></div>
+          <div style="display:flex; gap:6px; margin-top:6px">
+            <button id="av-btn-upload" style="flex:1">Upload & Save</button>
+            <button id="av-btn-copy-url" style="width:auto">Copy URL</button>
+          </div>
+        </div>
+        <div id="av-preview" style="flex:1; border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--surface-2)">
+          <div class="muted" id="av-preview-empty">Select an avatar to view details.</div>
+          <div id="av-preview-body" style="display:none">
+            <img id="av-preview-image" alt="avatar" style="max-width:100%; border-radius:10px; border:1px solid var(--border)" />
+            <div class="row" style="flex-direction:column; align-items:stretch">
+              <label>Name</label>
+              <input id="av-meta-name" />
+            </div>
+            <div class="row" style="display:flex; gap:6px; align-items:flex-start">
+              <div style="flex:1">
+                <label>Group</label>
+                <input id="av-meta-group" />
+              </div>
+              <div style="flex:1">
+                <label>Tags</label>
+                <input id="av-meta-tags" placeholder="comma-separated" />
+              </div>
+            </div>
+            <div class="row" style="flex-direction:column; align-items:stretch">
+              <label>Description</label>
+              <textarea id="av-meta-desc" rows="2"></textarea>
+            </div>
+            <div class="row" style="display:flex; gap:6px; flex-wrap:wrap">
+              <button id="av-btn-save-meta" style="flex:1">Save</button>
+              <button id="av-btn-replace" style="flex:1">Replace Image</button>
+              <button id="av-btn-copy-url2" style="flex:1">Copy URL</button>
+              <button id="av-btn-copy-bb" style="flex:1">Copy BBCode</button>
+              <button id="av-btn-download" style="flex:1">Download</button>
+              <button id="av-btn-delete" style="width:auto">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="display:flex; gap:6px; align-items:center">
+        <select id="av-group-filter" style="flex:0 0 140px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)"></select>
+        <input id="av-search" placeholder="Search name, tags, desc" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)" />
+        <select id="av-sort" style="flex:0 0 140px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--fg)">
+          <option value="name">Name A–Z</option>
+          <option value="updated">Recently Updated</option>
+          <option value="created">Recently Added</option>
+        </select>
+        <div class="muted" id="av-count" style="flex:0 0 auto">—</div>
+      </div>
+      <div class="row" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted)"><input id="av-bulk-toggle" type="checkbox" /> Bulk select</label>
+        <button id="av-btn-bulk-delete" style="flex:0 0 auto; width:auto" disabled>Delete selected</button>
+        <button id="av-btn-export-selected" style="flex:0 0 auto; width:auto" disabled>Export selected JSON</button>
+        <button id="av-btn-clear-selection" style="flex:0 0 auto; width:auto" disabled>Clear selection</button>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted)"><input id="av-compress" type="checkbox" /> Compress PNG (lossless)</label>
+      </div>
+      <div id="av-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap:8px"></div>
+      <div class="row" style="display:flex; gap:6px">
+        <button id="av-btn-export-json" style="flex:1">Export All Avatars JSON</button>
+        <button id="av-btn-import-json" style="flex:1">Import Avatars JSON</button>
+        <input id="av-import-file" type="file" accept="application/json" style="display:none" />
+      </div>
+    </div>
+  <div id="view-main" style="display:none">
     <div class="row">
       <label for="limit">Limit</label>
       <input id="limit" type="number" min="1" max="100" value="50" />
@@ -174,9 +307,11 @@
   <input id="scope-name" placeholder="e.g., My Wishlist, Halloween Sale" style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
       <span class="muted">If blank, the tool uses your picked selector or auto-detects.</span>
     </div>
-    <div class="row"><button id="btn-preview">Preview first N</button></div>
-    <div class="row"><button id="btn-export-crop">Export (crop)</button></div>
-    <div class="row"><button id="btn-restore">Restore list</button></div>
+    <div class="row" style="display:flex; gap:6px; align-items:center">
+      <button id="btn-preview" class="btn-grow">Preview first N</button>
+      <button id="btn-export-crop" class="btn-grow">Export (crop)</button>
+      <button id="btn-restore" class="btn-grow">Restore list</button>
+    </div>
     <div class="row" style="margin-top:-4px;">
       <span id="start-status" class="muted">Start from: —</span>
     </div>
@@ -185,11 +320,16 @@
       <button id="btn-clear-selectors" style="flex:1">Reset selectors</button>
     </div>
     <div class="row" style="margin-top:-4px;">
-      <span class="muted">Tip: On the template page, click <b>"Preview Template"</b> before using Pick card selector so item cards render.</span>
+      <span class="muted">Tips:
+        <br>- On the template page, click <b>"Preview Template"</b> before using Pick card selector so item cards render
+        <br>- Keep the template page visible during Crop captures
+        <br>- Use <b>Pick card selector</b> if detection misses your grid
+        <br>- Set a <b>Scope</b> name to match your list title on the page for more accurate section targeting
+      </span>
     </div>
     <div class="row"><button id="btn-open-template">Open template page</button></div>
     </div>
-    <div id="view-share" style="display:none">
+  <div id="view-share" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Saved</label>
         <div style="display:flex; gap:6px">
@@ -236,6 +376,53 @@
         <div id="no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL — upload or attach an image first.</div>
       </div>
     </div>
+    <div id="view-images" style="display:none">
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Saved Images</label>
+        <div style="display:flex; gap:6px">
+          <select id="images-saved-select" style="flex:1"></select>
+          <button id="images-btn-load" style="width:auto">Load</button>
+          <button id="images-btn-delete" style="width:auto">Delete</button>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <input id="images-saved-title" placeholder="Save Title" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <button id="images-btn-save" style="width:auto">Save Title</button>
+          <button id="images-btn-rename" style="width:auto">Rename</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <div id="images-drop-zone">Drop image here, paste (Ctrl+V), or use Load image file</div>
+      </div>
+      <div class="row" style="display:flex; gap:6px">
+        <button id="images-btn-load-file" style="flex:1">Load image file</button>
+        <button id="images-btn-clear-image" style="width:auto">Clear image</button>
+        <input id="images-file-input" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <img id="images-image-preview" alt="preview" style="max-width:100%; border-radius:10px; border:1px solid var(--border); display:none" />
+        <span class="muted">Tip: Upload to get a shareable URL + forum BBCode.</span>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Image URL</label>
+        <input id="images-image-url" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+        <div id="images-upload-status" class="muted" style="margin-top:6px; min-height:14px"></div>
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <button id="images-btn-upload" style="flex:1">Upload</button>
+          <button id="images-btn-copy-url" style="width:auto">Copy URL</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Forum link (BBCode)</label>
+        <label style="display:flex; align-items:center; gap:8px; margin:4px 0 6px 0; font-size:12px; color: var(--muted)">
+          <input id="images-include-title" type="checkbox" checked /> Include title in forum code
+        </label>
+        <textarea id="images-forum-link" rows="3" readonly style="padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)"></textarea>
+        <div style="display:flex; gap:6px; margin-top:6px">
+          <button id="images-btn-copy-forum" style="flex:1">Copy forum link</button>
+        </div>
+        <div id="images-no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL  upload or attach an image first.</div>
+      </div>
+    </div>
     <div id="view-settings" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it below.</p>
@@ -263,6 +450,15 @@
         </select>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
+        <label>Avatar max entries</label>
+        <select id="av-cap-select">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="200">200</option>
+          <option value="unlimited">Unlimited</option>
+        </select>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
         <label>Theme</label>
         <select id="theme-select">
           <option value="default">Default</option>
@@ -277,20 +473,13 @@
         <select id="header-font-select"></select>
       </div>
       <div class="row" style="justify-content:space-between; align-items:center">
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="auto-switch-share" checked /> Switch to Share tab after capture</label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="auto-switch-share" checked /> Switch to Wish Lists tab after capture</label>
         <button id="btn-reset-settings" style="width:auto">Reset settings</button>
       </div>
       <div class="row" style="display:flex; gap:6px">
         <button id="btn-export-json" style="flex:1">Export JSON</button>
         <button id="btn-import-json" style="flex:1">Import JSON</button>
         <input id="import-file" type="file" accept="application/json" style="display:none" />
-      </div>
-      <div class="row" style="flex-direction:column; align-items:stretch">
-        <p class="muted">Tips:
-          <br>- Keep the template page visible during Crop captures
-          <br>- Use Pick card selector if detection misses your grid
-          <br>- Set a Scope name to match your list title on the page
-        </p>
       </div>
     </div>
   <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
