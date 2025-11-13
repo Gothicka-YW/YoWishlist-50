@@ -1,4 +1,16 @@
-# YoWishlist-50 Changelog
+# YoCatalog Changelog
+
+## 1.5.0 - 2025-11-13
+- Rename: Project renamed from "YoWishlist-50" to "YoCatalog". Updated manifest name/title, README, footer Privacy Policy link, and in-app strings.
+- Home: Header now says "Welcome to YoCatalog!" and includes a new "Open Help Guide" link.
+- Avatars: New tab with full catalog features — name, group, tags, description, image upload (imgbb primary, catbox fallback), search/filter/sort, Replace Image, Copy URL/BBCode, Download, Delete, bulk select (delete/export), and Export/Import JSON. Configurable cap (or unlimited).
+- Images: New tab mirroring Wish Lists upload/save flow for a separate image library (drag/drop/paste, Upload, Copy URL/BBCode, Save/Rename/Delete/Load). Upload uses imgbb → catbox fallback.
+- Wish Lists: Polished upload + BBCode workflow; retains include-title toggle and saved entries with caps.
+- Screen Grab: Now only functions on yoworld.info/template. When off-site, buttons are disabled with a friendly note; "Open template page" remains available. Auto-switch to Wish Lists after Export (crop) preserved.
+- Layout/UX: Consistent popup width across tabs; narrower default buttons; equal-width action row for Screen Grab actions; last-opened tab persists.
+- Settings: Restored to its own tab (previously nested under Images by mistake). Contains imgbb key, caps, theme, header font, auto-switch toggle, Reset, Import/Export JSON, and Help/Guide link.
+- Fixes: Removed duplicate "No image URL — …" hint and stray control character in Images tab.
+- Docs: Added comprehensive `YoCatalog_HelpGuide.md`; linked from Home. Updated README and Privacy Policy link paths.
 
 ## 1.4.5 - 2025-10-08
 - Tweak: Increased bottom padding by ~48 px for large crops (≥9 rows; e.g., Limit 50 with 5 columns) to prevent manual text/captions from being clipped. Smaller crops keep prior padding.

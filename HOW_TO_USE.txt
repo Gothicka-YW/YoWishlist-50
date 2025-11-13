@@ -1,63 +1,45 @@
-YoWishlist 50 — How to Use
+YoCatalog — Quick Start
 
-1) If downloading from GitHub: 
-- Install and open the popup
-- Load the extension in Chrome (Developer mode → Load unpacked → select this folder).
-- Click the YoWishlist 50 icon to open the popup.
+Full detailed guide: Open the popup → Home tab → "Open Help Guide" (file: YoCatalog_HelpGuide.md). This file is a lightweight summary for Chrome Web Store users.
 
-If installed from Chrome Web Store, you are all set.
+1) Install
+- Chrome Web Store: Click Add → Pin the YoCatalog icon (optional) → Open popup.
+- Manual (dev/unpacked): Developer Mode → Load unpacked → select folder → open popup.
 
-2) Main tab
-- Limit: Set how many items to include (e.g., 50).
-- Scope (optional): Type the list title as shown on yoworld.info (e.g., “My Wishlist”) so the tool targets that section.
-- Preview first N: Highlights the first N cards in the target section.
-- Export (crop): Captures and stitches a clean image of the selected grid without scroll artifacts.
-- Restore list: Reverts temporary page changes made by Preview/Export.
-- Pick card selector: Choose a single item tile to help the tool detect your grid if auto-detect misses.
-	Note: On the yoworld.info template page, click "Preview Template" first so the item cards render, then use Pick card selector on a single tile.
-- Reset selectors: Clears stored selectors so you can re-pick.
-- Open template page: Opens https://yoworld.info/template in a tab.
+2) Core Tabs (Overview)
+- Home: Welcome + quick links (Help Guide, Privacy Policy).
+- Screen Grab: Capture clean stitched wishlist/template grids. Works ONLY on https://yoworld.info/template. Use Preview Template first, then set Limit and Export (crop). Auto-switch to Wish Lists (if enabled in Settings).
+- Wish Lists: Stage an image (paste / drag-drop / file), Upload (imgbb → catbox fallback), Save/Rename/Delete entries, copy URL or BBCode (with optional title).
+- Images: Separate image library (independent of Wish Lists). Same staging & upload flow; manage, copy, rename, delete.
+- Avatars: Catalog of avatar images with name, group, tags, description. Upload/replace image, search, filter (group, tags), sort, bulk select (delete/export), import/export JSON.
+- Settings: imgbb API key, caps, theme, header font, auto-switch toggle, Reset, Import/Export JSON backup, Privacy link.
 
-Tips:
-- On the yoworld.info template page, click "Preview Template" before using Pick card selector or Export (crop). This ensures the grid is fully rendered for accurate detection/capture.
-- Keep the template page visible during Crop captures.
-- If detection misses your grid, use Pick card selector on a single tile, then retry.
-- Press Enter in the Scope field to scroll to and highlight the matching section.
- - For a tight 3×2 capture: set Limit = 6, ensure a 3×2 is visible, then Export (crop). The crop targets the six card images and keeps slim white sides with extra space under captions.
+3) Typical Workflows
+- Capture & Share: Open template page → Preview Template → set Limit → Export (crop) → (auto) switch to Wish Lists → Upload → Copy URL/BBCode.
+- Add Avatar: Avatars tab → Select image (paste/drag-drop/file) → Upload → Fill name/group/tags/description → Save.
+- Manage Images: Images tab → Stage image → Upload → Save entry with title → Later copy URL/BBCode or Delete.
 
-3) Share tab (save, upload, and share)
-- Saved: Store entries by title (Save/Rename/Delete). The list remembers your last selection.
-- Load image: Drag & drop, paste (Ctrl+V), or load a file to stage an image.
-- Upload: Sends the staged image to a host and returns a URL (imgbb with your key → postimages attempt → catbox fallback).
-- Image URL: Copy the URL for sharing.
-- Forum link (BBCode): Copy ready-to-paste forum code. Use the “Include title” checkbox to toggle the [b]Title[/b] prefix.
+4) Upload Pipeline
+- Primary: imgbb (requires your API key).
+- Fallback: catbox (automatic if primary fails). Postimages best-effort legacy is not guaranteed and may be skipped.
 
-Save Title behavior:
-- Saving an existing title asks to update the entry; choosing Yes replaces the stored image (auto-uploads the staged image with fallbacks if needed).
+5) Data & Privacy
+- No tracking/analytics; data stored in chrome.storage.sync under your profile.
+- Upload only occurs when you click Upload; third-party hosts have their own policies.
+- Export/Import JSON lets you back up Avatars, Wish Lists, Images, and settings (not your imgbb key).
 
-4) Settings tab
-- imgbb API Key: Paste and save; Test key checks connectivity (no upload).
-- Max saved entries: Choose 10/25/50/100/Unlimited.
-- Theme: Change the color theme; default uses a purple → dark blue gradient.
-- Header font: Choose a local font from fonts/fonts.css. Default is “Dancing Script” if available.
-- Switch to Share after capture: Jump to Share automatically after export.
-- Reset settings: Clears settings (not your Saved entries).
-- Import/Export JSON: Back up or restore saved entries and settings (keys excluded).
-- Privacy Policy: Link in the footer opens the policy on GitHub.
+6) Tips
+- Screen Grab buttons disabled off-site; use "Open template page" if needed.
+- If detection misses your grid: use card picker on a single item tile, then retry export.
+- Narrow buttons & persistent last tab streamline repeat usage.
 
-5) Keyboard and workflow
-- Enter in Scope: quickly finds/highlights the target section.
-- After export (crop), switch to Share to upload and share.
+7) Troubleshooting
+- Export disabled? You are not on yoworld.info/template.
+- Upload failed? Check imgbb key (Settings) or connectivity; fallback should auto-attempt.
+- Missing fonts? Ensure custom font is loaded in fonts.css locally.
 
-6) Privacy and data
-- No analytics or tracking.
-- Data stored in Chrome extension storage (sync) under your account.
-- Uploads only occur when you click Upload; third-party hosts have their own policies.
+8) Support & Source
+- Issues / feedback: https://github.com/Gothicka-YW/YoWishlist-50 (repo name legacy; extension branded YoCatalog).
+- Full guide & Privacy Policy linked from Home tab.
 
-Troubleshooting
-- If nothing happens, make sure your active tab is on yoworld.info/template.
-- If detection fails, use Pick card selector on a single item tile, then Preview/Export again.
-- For API issues, verify your imgbb key and internet connectivity.
-
-Support
-- Open an issue on GitHub: https://github.com/Gothicka-YW/YoWishlist-50
+If you need granular step-by-step instructions or advanced usage (bulk Avatars, JSON import/export, BBCode variations), open the full Help Guide.
