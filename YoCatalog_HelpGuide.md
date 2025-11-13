@@ -19,7 +19,7 @@ No accounts or servers are required; your data is stored in Chrome storage. This
 ## Tabs and Features
 
 ### Home
-- Welcome screen and useful descriptions and information about the extension.
+- Welcome screen with useful descriptions and information about the extension.
 
 ### Avatars
 - Catalog entries include: name, optional group, tags (comma-separated), optional description, and an image URL.
