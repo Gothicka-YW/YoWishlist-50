@@ -1,7 +1,9 @@
-# YoWishlist-50 Help Guide
+# YoCatalog Help Guide
+
+Note: Formerly "YoWishlist-50". Some screenshots or labels may still reference the old name.
 
 ## What it does
-YoWishlist-50 is a fan-made Chrome extension that trims and exports the first N tiles from the YoWorld template page at yoworld.info/template. It can target either the Wish List or Sale Items section and export using one of two modes:
+YoCatalog is a fan-made Chrome extension that trims and exports the first N tiles from the YoWorld template page at yoworld.info/template. It can target either the Wish List or Sale Items section and export using one of two modes:
 
 - Export (crop): Captures a stitched, full-height PNG of the selected section without scroll artifacts. The background is forced to white during capture for a clean, shareable image.
 
@@ -15,7 +17,7 @@ No accounts or servers are used; settings are saved in Chrome sync storage. This
 
 ## Quick start
 
-1) Click the YoWishlist-50 icon in Chrome. If you aren’t already on yoworld.info/template, the extension will open it for you.
+1) Click the YoCatalog icon in Chrome. If you aren’t already on yoworld.info/template, the extension will open it for you.
 
 2) Set your options in the popup:
   - Limit: Number of items to keep (1–100). Defaults to 50.

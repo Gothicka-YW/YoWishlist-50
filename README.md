@@ -1,9 +1,9 @@
-# YoWishlist-50
-Wish List importer for use on YoWorld Forums or to create "Sales" for the YoWorld Facebook selling groups.
+# YoCatalog
+Formerly "YoWishlist-50". Wish List importer for use on YoWorld Forums or to create "Sales" for the YoWorld Facebook selling groups.
 
 ## Privacy Policy
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
-- PRIVACY_POLICY: https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt
+- PRIVACY_POLICY: ./PRIVACY_POLICY.txt
 
 ## What’s new (v1.4.9)
 - Refinement: The mid-list pick index is only used when a selector hint exists and matches the current section, so exports without preview work as before.

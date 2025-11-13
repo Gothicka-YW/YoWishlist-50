@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>YoWishlist 50</title>
+    <title>YoCatalog</title>
   <link rel="stylesheet" href="fonts/fonts.css" />
   <style>
       :root{
@@ -169,13 +169,10 @@
   </head>
   <body>
     <div class="app">
-      <div class="header-line">
-        <h1>YoWishlist 50</h1>
-      </div>
       <div class="row" id="tabs">
         <button id="tab-home" class="tab active" style="flex:1">Home</button>
         <button id="tab-avatars" class="tab" style="flex:1">Avatars</button>
-        <button id="tab-main" class="tab" style="flex:1">Screengrab</button>
+        <button id="tab-main" class="tab" style="flex:1">Screen Grab</button>
         <button id="tab-share" class="tab" style="flex:1">Wish Lists</button>
         <button id="tab-images" class="tab" style="flex:1">Images</button>
         <button id="tab-settings" class="tab" style="flex:1">Settings</button>
@@ -197,10 +194,11 @@
             background-clip: text;
             -webkit-text-fill-color: transparent;
           ">Welcome to YoPlaceholder!</h2>
+            ">Welcome to YoCatalog!</h2>
         </div>
         <div style="display:flex; flex-direction:column; gap:10px; padding:8px; border:1px solid var(--border); border-radius:12px; background: var(--surface-2)">
           <h3 style="margin:0; font-size:16px">Avatars</h3>
-          <h3 style="margin:0; font-size:16px">Screengrab</h3>
+          <h3 style="margin:0; font-size:16px">Screen Grab</h3>
           <h3 style="margin:0; font-size:16px">Wish Lists</h3>
           <h3 style="margin:0; font-size:16px">Images</h3>
         </div>
@@ -391,10 +389,10 @@
         </div>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
-        <div id="images-drop-zone">Drop image here, paste (Ctrl+V), or use Load image file</div>
+  <div id="images-drop-zone">Drop image here, paste (Ctrl+V), or use Load image file…</div>
       </div>
       <div class="row" style="display:flex; gap:6px">
-        <button id="images-btn-load-file" style="flex:1">Load image file</button>
+  <button id="images-btn-load-file" style="flex:1">Load image file…</button>
         <button id="images-btn-clear-image" style="width:auto">Clear image</button>
         <input id="images-file-input" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" />
       </div>
@@ -420,10 +418,7 @@
         <div style="display:flex; gap:6px; margin-top:6px">
           <button id="images-btn-copy-forum" style="flex:1">Copy forum link</button>
         </div>
-        <div id="images-no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL  upload or attach an image first.</div>
-      </div>
-    </div>
-    <div id="view-settings" style="display:none">
+        <div id="images-no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL — upload or attach an image first.</div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it below.</p>
         <div style="display:flex; gap:6px">
@@ -482,7 +477,7 @@
         <input id="import-file" type="file" accept="application/json" style="display:none" />
       </div>
     </div>
-  <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoWishlist-50/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
+  <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoCatalog/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
     </div>
     <script src="popup.js"></script>
   </body>

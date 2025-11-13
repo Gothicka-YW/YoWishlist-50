@@ -1136,7 +1136,7 @@
   // Resources: open help
   if (document.getElementById('btn-open-help')){
     document.getElementById('btn-open-help').addEventListener('click', ()=>{
-      const url = 'https://github.com/Gothicka-YW/YoWishlist-50#readme';
+      const url = 'https://github.com/Gothicka-YW/YoCatalog#readme';
       try { chrome.tabs.create({ url }); } catch { window.open(url, '_blank'); }
     });
   }
