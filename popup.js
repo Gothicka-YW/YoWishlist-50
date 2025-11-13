@@ -72,14 +72,33 @@
   function activeTemplateTab(cb){
     chrome.tabs.query({ active:true, currentWindow:true }, (tabs) => {
       const tab = tabs && tabs[0]; if (!tab) return;
-      const go = () => cb(tab.id);
       try {
         const url = new URL(tab.url || '');
         const ok = (url.hostname && url.hostname.endsWith('yoworld.info')) && (url.pathname || '').includes('template');
-        if (ok) return go();
+        if (ok) { cb(tab.id); return; }
       } catch(e){}
-      chrome.tabs.update(tab.id, { url: 'https://yoworld.info/template' }, () => setTimeout(go, 900));
+      alert('Screen Grab works only on yoworld.info/template. Use "Open template page" to navigate there.');
     });
+  }
+
+  function gateMainTabByUrl(){
+    try{
+      chrome.tabs.query({ active:true, currentWindow:true }, (tabs)=>{
+        const tab = tabs && tabs[0];
+        let ok = false;
+        try{
+          const url = new URL(tab?.url || '');
+          ok = (url.hostname && url.hostname.endsWith('yoworld.info')) && (url.pathname || '').includes('template');
+        } catch{}
+        const ids = ['btn-preview','btn-export-crop','btn-restore','btn-pick','btn-clear-selectors'];
+        ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !ok; });
+        const status = document.getElementById('start-status');
+        if (status){
+          if (!ok) status.textContent = 'Screen Grab is available only on yoworld.info/template';
+          else updateStartStatus(); // will be refreshed on actions
+        }
+      });
+    }catch{}
   }
   // ================== Avatars Data Model ==================
   function normalizeTags(raw){
@@ -511,6 +530,7 @@
     });
     const active = document.getElementById('tab-'+id); if(active) active.classList.add('active');
     chrome.storage.sync.set({ [STORAGE_KEYS.lastTab]: id });
+    if (id === 'main') gateMainTabByUrl();
   }
   if ($('#tab-home')) $('#tab-home').addEventListener('click', () => showTab('home'));
   if ($('#tab-avatars')) $('#tab-avatars').addEventListener('click', () => showTab('avatars'));
