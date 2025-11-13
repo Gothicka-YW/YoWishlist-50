@@ -1,9 +1,6 @@
 # YoCatalog Help Guide
 Note: Formerly "YoWishlist-50". Some screenshots or labels may still reference the old name.
 
-# YoCatalog Help Guide
-Note: Formerly "YoWishlist-50". Some screenshots or labels may still reference the old name.
-
 ## Overview
 
 YoCatalog is a fan-made Chrome extension for organizing and sharing content for the YoWorld community. It consolidates:
