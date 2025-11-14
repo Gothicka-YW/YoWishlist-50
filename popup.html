@@ -6,36 +6,41 @@
   <link rel="stylesheet" href="fonts/fonts.css" />
   <style>
       :root{
-        /* Default theme (purple → dark blue gradient) */
-        --bg: #6a11cb;       /* background gradient start (purple) */
-        --bg-2: #0b1e4e;     /* background gradient end (dark blue) */
-        --fg: #EAE8EC;       /* text on dark */
-        --muted: #B8ADB8;    /* secondary text */
-        --surface: #141329;  /* deep indigo panel */
-        --surface-2: #1b1a34;/* slightly lighter panel */
-        --border: #2e2a5a;   /* indigo outline */
-        --accent: #7a2df1;   /* vivid purple for accents */
-        --accent-contrast: #ffffff;
+        /* Default theme now: Cool Mist */
+        --bg:#F2F5F6; /* gradient start */
+        --bg-2:#E3E8EA; /* gradient end */
+        --fg:#283138;
+        --muted:#5A6872;
+        --surface:#E3E8EA;
+        --surface-2:#D7DDE0;
+        --border:#CDD3D6;
+        --accent:#507B91;
+        --accent-contrast:#ffffff;
         --btn-bg: var(--accent);
-        --btn-bg-hover: #6930d9;
-        --accent-ring: rgba(122,45,241,.36);
-        --btn-border: #1a1340;
-        --input-bg: #111029; /* inputs slightly offset from surface */
-        --shadow: 0 10px 24px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.25);
-        --highlight: #7A0E21; /* blood rose */
-        --metallic: #C0BFC4; /* antique silver */
-        /* Button gradient stops for 3D effect */
-        --btn-grad-start: #8a41ff;  /* top */
-        --btn-grad-mid:   #6f34f0;  /* center */
-        --btn-grad-end:   #274cdb;  /* bottom (toward dark blue) */
-        /* Unified popup width (consistent across all tabs) */
-        --popup-width: 480px;
+        --btn-bg-hover:#436b7c;
+        --accent-ring: rgba(80,123,145,.30);
+        --btn-border:#2f4d59;
+        --input-bg:#ffffff;
+        --shadow:0 10px 24px rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.10);
+        --highlight:#3B91B8;
+        --metallic:#A9B2B7;
+        --btn-grad-start:#6d92a6;
+        --btn-grad-mid:#507B91;
+        --btn-grad-end:#2f4d59;
+        --popup-width:480px;
       }
       /* Themes */
   body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); --btn-grad-start:#5b97ff; --btn-grad-mid:#2f71ff; --btn-grad-end:#1c3aa9; }
   body.theme-yo-pink{ --bg:#fff5f8; --fg:#241421; --muted:#7a5d72; --surface:#ffffff; --surface-2:#ffe9f1; --border:#ffd3e3; --accent:#e91e63; --btn-bg-hover:#c2185b; --btn-border:#8c1440; --input-bg:#fff; --accent-ring: rgba(233,30,99,.30); --btn-grad-start:#ff74a7; --btn-grad-mid:#e91e63; --btn-grad-end:#8c1440; }
   body.theme-emerald{ --bg:#f2fbf6; --fg:#0e1813; --muted:#5b6e64; --surface:#ffffff; --surface-2:#e9f7ef; --border:#cde9da; --accent:#0f9d58; --btn-bg-hover:#0c7a44; --btn-border:#095a33; --input-bg:#fff; --accent-ring: rgba(15,157,88,.28); --btn-grad-start:#36da8f; --btn-grad-mid:#0f9d58; --btn-grad-end:#095a33; }
   body.theme-contrast{ --bg:#ffffff; --fg:#000; --muted:#222; --surface:#ffffff; --surface-2:#f2f2f2; --border:#000; --accent:#000; --btn-bg-hover:#222; --btn-border:#000; --input-bg:#fff; --accent-ring: rgba(0,0,0,.28); --btn-grad-start:#333; --btn-grad-mid:#1a1a1a; --btn-grad-end:#000; }
+  /* New eye-friendly themes */
+  body.theme-mist{ --bg:#F2F5F6; --fg:#283138; --muted:#5A6872; --surface:#E3E8EA; --surface-2:#D7DDE0; --border:#CDD3D6; --accent:#507B91; --btn-bg-hover:#436b7c; --btn-border:#2f4d59; --input-bg:#ffffff; --accent-ring: rgba(80,123,145,.30); --btn-grad-start:#6d92a6; --btn-grad-mid:#507B91; --btn-grad-end:#2f4d59; --highlight:#3B91B8; }
+  body.theme-green-tea{ --bg:#F4F7F4; --fg:#2E382F; --muted:#5A665B; --surface:#E6ECE6; --surface-2:#D9E2D9; --border:#CFD6CF; --accent:#557C5B; --btn-bg-hover:#436449; --btn-border:#2f4033; --input-bg:#ffffff; --accent-ring: rgba(85,124,91,.30); --btn-grad-start:#6c9271; --btn-grad-mid:#557C5B; --btn-grad-end:#2f4033; --highlight:#4D9A66; }
+  body.theme-slate-midnight{ --bg:#1F2429; --fg:#E2E6EA; --muted:#A7B1BA; --surface:#2A3036; --surface-2:#22282d; --border:#3B444C; --accent:#5C8FB8; --btn-bg-hover:#4A7BA3; --btn-border:#2d4f6b; --input-bg:#1F252B; --accent-ring: rgba(92,143,184,.32); --btn-grad-start:#6ea2c9; --btn-grad-mid:#5C8FB8; --btn-grad-end:#2d4f6b; --highlight:#4CA2D6; }
+  body.theme-autumn-leaf{ --bg:#F7F3EE; --fg:#332820; --muted:#66594F; --surface:#ECE4DA; --surface-2:#E2D9CE; --border:#D8CCBF; --accent:#7C4F33; --btn-bg-hover:#633f29; --btn-border:#4a2d1c; --input-bg:#ffffff; --accent-ring: rgba(124,79,51,.30); --btn-grad-start:#9a6a4d; --btn-grad-mid:#7C4F33; --btn-grad-end:#4a2d1c; --highlight:#C27A3C; }
+  body.theme-espresso-cream{ --bg:#F5F1EC; --fg:#2F251F; --muted:#63564D; --surface:#E8E2DA; --surface-2:#DCD4CA; --border:#D5CCBF; --accent:#5A3F30; --btn-bg-hover:#462f24; --btn-border:#382418; --input-bg:#ffffff; --accent-ring: rgba(90,63,48,.32); --btn-grad-start:#7a5a48; --btn-grad-mid:#5A3F30; --btn-grad-end:#382418; --highlight:#A26F42; }
+  body.theme-dark-graphite{ --bg:#1E1F22; --fg:#DFE3E7; --muted:#A4ADB5; --surface:#292B2F; --surface-2:#212327; --border:#3A3D42; --accent:#5F6E87; --btn-bg-hover:#4d5a70; --btn-border:#2f3848; --input-bg:#202226; --accent-ring: rgba(95,110,135,.32); --btn-grad-start:#7a89a3; --btn-grad-mid:#5F6E87; --btn-grad-end:#2f3848; --highlight:#4F89C3; }
 
       *{ box-sizing: border-box; }
       html, body{ margin:0; overflow:hidden; }
@@ -109,6 +114,8 @@
       }
       input[type="number"]{ width: 110px; }
       select{padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg);}
+      /* Theme-colored checkboxes & radios */
+      input[type="checkbox"], input[type="radio"]{ accent-color: var(--accent); }
       button{
         /* Smaller, more 3D buttons */
         background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-mid) 55%, var(--btn-grad-end));
@@ -253,10 +260,14 @@
           ">Welcome to YoCatalog!</h2>
         </div>
         <div style="display:flex; flex-direction:column; gap:10px; padding:8px; border:1px solid var(--border); border-radius:12px; background: var(--surface-2)">
-          <h3 style="margin:0; font-size:16px">Avatars</h3>
           <h3 style="margin:0; font-size:16px">Screen Grab</h3>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Capture your wish list from the <b>yoworld.info/template</b> page. Preview the first N items, precisely <b>pick</b> the card selector if auto-detect misses, then <b>Export (crop)</b> a clean stitched image. Use <b>Restore list</b> to reinstate original content after experimentation. Keep the template page visible during capture for best results.</p>
           <h3 style="margin:0; font-size:16px">Wish Lists</h3>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Save your captured lists with a title, then quickly <b>copy</b> the direct image URL or forum <b>BBCode</b>. Load, rename, or delete entries, and <b>export/import</b> your library as JSON. Optionally auto-switch here after an export.</p>
+          <h3 style="margin:0; font-size:16px">Avatars</h3>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Build a personal avatar catalog. <b>Upload</b> (or paste/drag) images, add <b>name</b>, <b>group</b>, <b>tags</b>, and a description. Search, sort, bulk select, <b>replace</b> images, and <b>export/import</b> JSON. One click to copy URL or BBCode for forum posts.</p>
           <h3 style="margin:0; font-size:16px">Images</h3>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">A simple image library separate from Wish Lists. <b>Upload</b> (or paste/drag) any image, save with a title, then <b>copy</b> the URL or BBCode. Load, rename, delete entries, and <b>export/import</b> as needed.</p>
         </div>
         <div class="row" style="justify-content:center; margin-top:8px;">
           <a href="https://github.com/Gothicka-YW/YoCatalog/blob/main/YoCatalog_HelpGuide.md" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline">Open Help Guide</a>
@@ -520,13 +531,18 @@
         </div>
         <div class="row" style="flex-direction:column; align-items:stretch">
           <label>Theme</label>
-          <select id="theme-select">
-            <option value="default">Default</option>
-            <option value="midnight">Midnight</option>
-            <option value="yo-pink">Yo Pink</option>
-            <option value="emerald">Emerald</option>
-            <option value="contrast">High Contrast</option>
-          </select>
+            <select id="theme-select">
+              <option value="default">Cool Mist (Default)</option>
+              <option value="autumn-leaf">Autumn Leaf</option>
+              <option value="contrast">High Contrast</option>
+              <option value="dark-graphite">Dark Graphite</option>
+              <option value="emerald">Emerald</option>
+              <option value="espresso-cream">Espresso Cream</option>
+              <option value="green-tea">Green Tea</option>
+              <option value="midnight">Midnight</option>
+              <option value="slate-midnight">Slate Midnight</option>
+              <option value="yo-pink">Yo Pink</option>
+            </select>
         </div>
         <div class="row" style="flex-direction:column; align-items:stretch">
           <label>Header font</label>

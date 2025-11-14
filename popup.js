@@ -1212,12 +1212,26 @@
 
   // Theme selection
   function applyTheme(name){
-    const cls = ['theme-midnight','theme-yo-pink','theme-emerald','theme-contrast'];
+    const cls = [
+      'theme-midnight','theme-yo-pink','theme-emerald','theme-contrast',
+      'theme-mist','theme-green-tea','theme-slate-midnight','theme-autumn-leaf','theme-espresso-cream','theme-dark-graphite'
+    ];
     document.body.classList.remove(...cls);
-    if(name==='midnight') document.body.classList.add('theme-midnight');
-    else if(name==='yo-pink') document.body.classList.add('theme-yo-pink');
-    else if(name==='emerald') document.body.classList.add('theme-emerald');
-    else if(name==='contrast') document.body.classList.add('theme-contrast');
+    if (!name || name==='default') return;
+    const map = {
+      'midnight':'theme-midnight',
+      'yo-pink':'theme-yo-pink',
+      'emerald':'theme-emerald',
+      'contrast':'theme-contrast',
+      'mist':'theme-mist',
+      'green-tea':'theme-green-tea',
+      'slate-midnight':'theme-slate-midnight',
+      'autumn-leaf':'theme-autumn-leaf',
+      'espresso-cream':'theme-espresso-cream',
+      'dark-graphite':'theme-dark-graphite'
+    };
+    const clsName = map[name];
+    if (clsName) document.body.classList.add(clsName);
   }
   if ($('#theme-select')){
     $('#theme-select').addEventListener('change', ()=>{
