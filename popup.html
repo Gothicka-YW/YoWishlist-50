@@ -29,7 +29,7 @@
         --btn-grad-mid:   #6f34f0;  /* center */
         --btn-grad-end:   #274cdb;  /* bottom (toward dark blue) */
         /* Unified popup width (consistent across all tabs) */
-        --popup-width: 640px;
+        --popup-width: 480px;
       }
       /* Themes */
   body.theme-midnight{ --bg:#0f1217; --fg:#e7ecf3; --muted:#a4adba; --surface:#171b22; --surface-2:#1f2430; --border:#2a3240; --accent:#2f71ff; --btn-bg-hover:#1f58d6; --btn-border:#153a8c; --input-bg:#1a202a; --accent-ring: rgba(47,113,255,.30); --btn-grad-start:#5b97ff; --btn-grad-mid:#2f71ff; --btn-grad-end:#1c3aa9; }
@@ -62,7 +62,7 @@
           0 14px 30px rgba(0,0,0,.14),
           0 6px 16px rgba(0,0,0,.08),
           inset 0 0 0 1px var(--border);
-  padding: 12px 12px 16px 12px;
+  padding: 10px 10px 14px 10px;
         overflow: hidden; /* ensure rounded corners feel real */
   /* Scroll inside the rounded card (let popup auto-size up to viewport) */
   max-height: calc(100vh - 4px);
@@ -103,20 +103,20 @@
   body.header-font-custom h1{ font-family: var(--yl-header-font), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:700; letter-spacing:.3px; }
   /* Example class for a local font family declared in fonts/fonts.css */
   body.header-font-local-1 h1{ font-family: "Header Script", "Segoe Script", cursive; font-weight:700; letter-spacing:.3px; }
-      .row{display:flex; align-items:center; gap:8px; margin:8px 0}
+      .row{display:flex; align-items:center; gap:8px; margin:6px 0}
       input[type="number"], input[type="text"], textarea{
-        padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);
+        padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg);
       }
       input[type="number"]{ width: 110px; }
-      select{padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--input-bg); color: var(--fg);}
+      select{padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg);}
       button{
         /* Smaller, more 3D buttons */
         background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-mid) 55%, var(--btn-grad-end));
         color: var(--accent-contrast);
         border: 1px solid var(--btn-border);
-        border-radius: 10px;
-        padding: 8px 10px;
-        font-size: 13px;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 12px;
         font-weight: 700;
         /* Standard narrower buttons by default */
         width: auto;
@@ -158,22 +158,79 @@
       button[disabled]{ opacity:.65; cursor:not-allowed; filter: saturate(.9) brightness(.98); }
       .muted{font-size:11px;color:var(--muted);margin-top:6px; line-height:1.2}
   /* Drop zone */
-  #drop-zone{ display:flex; align-items:center; justify-content:center; text-align:center; padding:14px; border:2px dashed var(--border); border-radius:12px; background: var(--surface-2); color: var(--muted); }
+  #drop-zone{ display:flex; align-items:center; justify-content:center; text-align:center; padding:10px; border:2px dashed var(--border); border-radius:12px; background: var(--surface-2); color: var(--muted); }
+  #images-drop-zone, #av-drop-zone{ display:flex; align-items:center; justify-content:center; text-align:center; padding:10px; border:2px dashed var(--border); border-radius:12px; background: var(--surface-2); color: var(--muted); }
   #drop-zone.dragover{ border-color: var(--accent); color: var(--fg); background: rgba(0,0,0,0.02); }
       /* Tabs */
       #tabs{ gap:6px; margin-bottom:6px }
-  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:6px 9px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); font-size:13px; max-width: none; flex: 1 1 0% !important; }
+  #tabs .tab{ background: var(--surface-2); color: var(--fg); border:1px solid var(--border); border-radius:10px; padding:5px 8px; font-weight:700; box-shadow: 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(255,255,255,.06); font-size:12px; max-width: none; flex: 1 1 0% !important; }
   #tabs .tab:hover{ filter: brightness(1.02); }
   #tabs .tab.active{ background: linear-gradient(180deg, var(--btn-grad-start), var(--btn-grad-end)); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 4px 10px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.10); }
+  /* ===== Settings compact mode ===== */
+  #view-settings .row{ gap:6px; margin:6px 0; }
+  #view-settings label{ font-size:12px; }
+  #view-settings input[type="text"],
+  #view-settings input[type="number"],
+  #view-settings textarea,
+  #view-settings select{
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:12px;
+  }
+  #view-settings button{
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:12px;
+    flex: 0 0 auto !important;
+  }
+  /* Cap widths so fields don't span full width unnecessarily */
+  #view-settings #saved-cap-select,
+  #view-settings #av-cap-select,
+  #view-settings #theme-select,
+  #view-settings #header-font-select{ max-width: 220px; }
+  /* Keep API key full width for usability */
+  #view-settings #imgbb-key{ width: 100%; }
+  /* Tighten helper text */
+  #view-settings .muted{ font-size:11px; }
+  /* Slightly pull Settings up to reduce top whitespace */
+  #view-settings{ margin-top: -4px; }
+  /* Two-column layout for key Settings selects */
+  #view-settings .settings-two-col{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap:10px; row-gap:8px; }
+  #view-settings .settings-two-col .row{ margin:0; }
+  #view-settings #saved-cap-select,
+  #view-settings #av-cap-select,
+  #view-settings #theme-select,
+  #view-settings #header-font-select{ max-width: none; width: 100%; }
+  /* ===== Avatars visual enhancements ===== */
+  #av-grid{ --avatar-card-min:120px; grid-template-columns: repeat(auto-fill, minmax(var(--avatar-card-min), 1fr)); }
+  #av-grid .avatar-card{ position:relative; display:flex; flex-direction:column; gap:4px; align-items:stretch; padding:8px 8px 10px; border:1px solid var(--border); border-radius:14px; background: var(--surface-2); font-size:11px; box-shadow: 0 2px 4px rgba(0,0,0,.20), inset 0 0 0 1px rgba(255,255,255,.05); cursor:pointer; transition: box-shadow .18s ease, transform .12s ease, border-color .18s ease; overflow:hidden; }
+  #av-grid .avatar-card:hover{ box-shadow: 0 4px 10px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.08); transform: translateY(-2px); }
+  #av-grid .avatar-card.selected{ border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-ring), 0 6px 14px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,255,255,.10); }
+  .avatar-thumb{ width:100%; aspect-ratio:1/1; border-radius:10px; overflow:hidden; background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 60%); display:flex; align-items:center; justify-content:center; position:relative; }
+  .avatar-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .avatar-placeholder{ font-size:10px; color:var(--muted); padding:4px; text-align:center; }
+  .avatar-name{ font-weight:600; font-size:11.5px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .group-badge{ display:inline-block; align-self:flex-start; background: var(--accent); color: var(--accent-contrast); font-size:10px; padding:2px 6px; border-radius:20px; font-weight:600; letter-spacing:.3px; box-shadow: 0 2px 4px rgba(0,0,0,.25); }
+  .avatar-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
+  .tag-chip{ background: var(--surface); border:1px solid var(--border); font-size:9.5px; padding:2px 5px; border-radius:12px; color: var(--muted); line-height:1.05; max-width:58px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avatar-card input[type=checkbox]{ position:absolute; top:6px; left:6px; width:14px; height:14px; }
+  /* Preview panel styling upgrades */
+  #av-preview{ position:relative; }
+  #av-preview-body{ display:flex; flex-direction:column; gap:8px; }
+  #av-preview-body img{ box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+  #av-preview-body .meta-row{ display:flex; gap:10px; }
+  #av-preview-body .chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  #av-preview-body .chip-row .tag-chip{ font-size:11px; padding:4px 8px; }
+  .avatar-timestamps{ font-size:10px; color: var(--muted); text-align:right; margin-top:-4px; }
     </style>
   </head>
   <body>
     <div class="app">
       <div class="row" id="tabs">
         <button id="tab-home" class="tab active" style="flex:1">Home</button>
-        <button id="tab-avatars" class="tab" style="flex:1">Avatars</button>
         <button id="tab-main" class="tab" style="flex:1">Screen Grab</button>
         <button id="tab-share" class="tab" style="flex:1">Wish Lists</button>
+        <button id="tab-avatars" class="tab" style="flex:1">Avatars</button>
         <button id="tab-images" class="tab" style="flex:1">Images</button>
         <button id="tab-settings" class="tab" style="flex:1">Settings</button>
       </div>
@@ -286,7 +343,7 @@
         <button id="av-btn-clear-selection" style="flex:0 0 auto; width:auto" disabled>Clear selection</button>
         <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted)"><input id="av-compress" type="checkbox" /> Compress PNG (lossless)</label>
       </div>
-      <div id="av-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap:8px"></div>
+      <div id="av-grid" style="display:grid; gap:10px"></div>
       <div class="row" style="display:flex; gap:6px">
         <button id="av-btn-export-json" style="flex:1">Export All Avatars JSON</button>
         <button id="av-btn-import-json" style="flex:1">Import Avatars JSON</button>
@@ -421,9 +478,11 @@
           <button id="images-btn-copy-forum" style="flex:1">Copy forum link</button>
         </div>
         <div id="images-no-image-hint" class="muted" style="display:none; margin-top:6px">No image URL — upload or attach an image first.</div>
-    </div>
+      </div>
+      <!-- Close view-images container (was missing) -->
+      </div>
 
-    <div id="view-settings" style="display:none">
+      <div id="view-settings" style="display:none">
       <div class="row" style="flex-direction:column; align-items:stretch">
         <p class="muted">Need an imgbb API key for uploads? Create or view your key on imgbb, then paste it below.</p>
         <div style="display:flex; gap:6px">
@@ -439,38 +498,40 @@
           <button id="btn-test-imgbb" style="width:auto">Test key</button>
         </div>
       </div>
-      <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>Max saved entries</label>
-        <select id="saved-cap-select">
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50" selected>50</option>
-          <option value="100">100</option>
-          <option value="unlimited">Unlimited</option>
-        </select>
-      </div>
-      <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>Avatar max entries</label>
-        <select id="av-cap-select">
-          <option value="50">50</option>
-          <option value="100" selected>100</option>
-          <option value="200">200</option>
-          <option value="unlimited">Unlimited</option>
-        </select>
-      </div>
-      <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>Theme</label>
-        <select id="theme-select">
-          <option value="default">Default</option>
-          <option value="midnight">Midnight</option>
-          <option value="yo-pink">Yo Pink</option>
-          <option value="emerald">Emerald</option>
-          <option value="contrast">High Contrast</option>
-        </select>
-      </div>
-      <div class="row" style="flex-direction:column; align-items:stretch">
-        <label>Header font</label>
-        <select id="header-font-select"></select>
+      <div class="settings-two-col">
+        <div class="row" style="flex-direction:column; align-items:stretch">
+          <label>Wish List Max Entries</label>
+          <select id="saved-cap-select">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="unlimited">Unlimited</option>
+          </select>
+        </div>
+        <div class="row" style="flex-direction:column; align-items:stretch">
+          <label>Avatar max entries</label>
+          <select id="av-cap-select">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="unlimited">Unlimited</option>
+          </select>
+        </div>
+        <div class="row" style="flex-direction:column; align-items:stretch">
+          <label>Theme</label>
+          <select id="theme-select">
+            <option value="default">Default</option>
+            <option value="midnight">Midnight</option>
+            <option value="yo-pink">Yo Pink</option>
+            <option value="emerald">Emerald</option>
+            <option value="contrast">High Contrast</option>
+          </select>
+        </div>
+        <div class="row" style="flex-direction:column; align-items:stretch">
+          <label>Header font</label>
+          <select id="header-font-select"></select>
+        </div>
       </div>
       <div class="row" style="justify-content:space-between; align-items:center">
         <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg)"><input type="checkbox" id="auto-switch-share" checked /> Switch to Wish Lists tab after capture</label>
@@ -482,7 +543,7 @@
         <input id="import-file" type="file" accept="application/json" style="display:none" />
       </div>
     </div>
-  <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoCatalog/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
+  <p class="muted">Unofficial fan tool — not affiliated with YoWorld or Big Viking Games. Screen Grab works on yoworld.info/template. • <a href="https://github.com/Gothicka-YW/YoCatalog/blob/main/PRIVACY_POLICY.txt" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:underline">Privacy Policy</a></p>
     </div>
     <script src="popup.js"></script>
   </body>

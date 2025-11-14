@@ -409,10 +409,11 @@ const docTop = rect.top + window.scrollY;
   function getContainer(){ if (state.containerSel){ try { const c=document.querySelector(state.containerSel); if(c) return c; } catch{} } return document; }
   function findCards(rootOverride){
     const container = rootOverride || getContainer() || document;
-    // If a specific card selector is saved, honor it strictly within the container
+    // If a specific card selector is saved, try direct-children first, then deep fallback
     if (state.cardSel){
       try {
-        const arr = Array.from(container.querySelectorAll(state.cardSel)).filter(n=>n.offsetParent!==null);
+        let arr = Array.from(container.querySelectorAll(`:scope > ${state.cardSel}`)).filter(n=>n.offsetParent!==null);
+        if (!arr.length) arr = Array.from(container.querySelectorAll(state.cardSel)).filter(n=>n.offsetParent!==null);
         if (arr.length) return arr;
       } catch{}
     }
@@ -498,7 +499,10 @@ const docTop = rect.top + window.scrollY;
       if (state.selectorHint){
         const hinted = document.querySelector(state.selectorHint);
         if (hinted){
-          idx = cards.findIndex(c => c && hinted && c.contains(hinted));
+          // First try strict equality (exact card match) to avoid ancestor matches shifting start up a row
+          idx = cards.findIndex(c => c === hinted);
+          // Fallback to contains only if equality not found (handles cases where saved element is inner child)
+          if (idx < 0) idx = cards.findIndex(c => c && hinted && c.contains(hinted));
           if (idx >= 0) used = 'picked';
         }
       }
@@ -512,6 +516,7 @@ const docTop = rect.top + window.scrollY;
           }
         } catch {}
         if (okContainer) {
+          // Use pickIndex directly (aligns with enumeration used during picking) when valid
           idx = Math.min(state.pickIndex, cards.length - 1);
           if (idx >= 0) used = 'picked';
         }
@@ -533,15 +538,41 @@ const docTop = rect.top + window.scrollY;
   function startPicker(){ if(state.picking) return; state.picking=true; const overlay=document.createElement('div'); Object.assign(overlay.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,0.08)',zIndex:2147483646,cursor:'crosshair',pointerEvents:'none'}); const tip=document.createElement('div'); tip.textContent='Click a single tile (outer white area). Press Esc to cancel.'; Object.assign(tip.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',top:'10px',background:'#111',color:'#fff',padding:'6px 10px',borderRadius:'8px',fontSize:'12px',zIndex:2147483647}); document.documentElement.append(overlay,tip); toast('Picker armed — click a tile');
     function cleanup(){ try{ overlay.remove(); tip.remove(); }catch{} document.removeEventListener('click', onDocClick, true); document.removeEventListener('keydown', onKey, true); state.picking=false; }
     function onKey(e){ if(e.key==='Escape'){ e.preventDefault(); cleanup(); toast('Picker cancelled'); } }
-  function onDocClick(e){ e.preventDefault(); e.stopPropagation(); const target=document.elementFromPoint(e.clientX,e.clientY); let node=target; while(node && node!==document.body && (!node.classList || node.classList.length===0)){ node=node.parentElement; } const card=closestCard(node)||node; const cardSelector=tagAndClasses(card); let chosenContainer=null, chosenCount=0; let cur=card.parentElement; for(let hops=0;cur && hops<12;hops++,cur=cur.parentElement){ try{ const count=Array.from(cur.querySelectorAll(cardSelector)).filter(n=>n.offsetParent!==null).length; if(count>=6){ chosenContainer=cur; chosenCount=count; break; } if(!chosenContainer && count>=3){ chosenContainer=cur; chosenCount=count; } }catch{} } if(!chosenContainer) chosenContainer=document; state.containerSel=uniqueCssPath(chosenContainer); state.cardSel=cardSelector; state.selectorHint=uniqueCssPath(card); state.which = 'auto';
-    // Compute and persist the index of the picked card within the chosen container for robust mid-list starts
-    let pickIndex = -1;
-    try {
-      const within = Array.from(chosenContainer.querySelectorAll(cardSelector)).filter(n=>n.offsetParent!==null);
-      pickIndex = within.indexOf(card);
-    } catch {}
-    state.pickIndex = pickIndex;
-    chrome.storage.sync.set({ yl50_container: state.containerSel, yl50_card: state.cardSel, yl50_selectors: state.selectorHint, yl50_scope: 'auto', yl50_pick_index: state.pickIndex }); cleanup(); toast(`Saved ✓ Found ${chosenCount} tiles in section`); }
+    function countDirectChildrenMatching(parent, selector){ try{ return Array.from(parent.children).filter(ch=> ch.matches(selector) && ch.offsetParent!==null).length; }catch{return 0;} }
+    function onDocClick(e){
+      e.preventDefault(); e.stopPropagation();
+      const target=document.elementFromPoint(e.clientX,e.clientY);
+      const card=closestCard(target)||target;
+      const cardSelector=tagAndClasses(card);
+      let chosenContainer=null, chosenCount=0; let cur=card.parentElement;
+      for(let hops=0;cur && hops<12;hops++,cur=cur.parentElement){
+        const directCount = countDirectChildrenMatching(cur, cardSelector);
+        if(directCount>=6){ chosenContainer=cur; chosenCount=directCount; break; }
+        if(!chosenContainer && directCount>=3){ chosenContainer=cur; chosenCount=directCount; }
+      }
+      if(!chosenContainer) chosenContainer=document;
+      state.containerSel=uniqueCssPath(chosenContainer);
+      state.cardSel=cardSelector;
+      state.selectorHint=uniqueCssPath(card);
+      state.which = 'auto';
+      // Persist index among direct children for robust mid-list starts
+      // Compute index using same enumeration strategy as capture to avoid off-by-one when direct children differ from deep query.
+      let pickIndex = -1;
+      try {
+        const listing = findCards(chosenContainer);
+        pickIndex = listing.findIndex(c => c === card || c.contains(card));
+        // Fallback to direct children heuristic if not found
+        if (pickIndex < 0){
+          const within = Array.from(chosenContainer.children).filter(ch=> ch.matches(cardSelector) && ch.offsetParent!==null);
+          pickIndex = within.indexOf(card);
+        }
+      } catch {}
+      state.pickIndex = pickIndex;
+      chrome.storage.sync.set({ yl50_container: state.containerSel, yl50_card: state.cardSel, yl50_selectors: state.selectorHint, yl50_scope: 'auto', yl50_pick_index: state.pickIndex });
+      // Ask background to reopen popup (Chrome closes extension popup when user clicks page)
+      try { chrome.runtime.sendMessage({ type: 'yl50-reopen-popup' }); } catch {}
+      cleanup(); toast(`Saved ✓ Found ${chosenCount} tiles in section`);
+    }
     document.addEventListener('click', onDocClick, true); document.addEventListener('keydown', onKey, true);
   }
 

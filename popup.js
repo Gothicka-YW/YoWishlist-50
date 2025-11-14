@@ -154,30 +154,46 @@
     else if (sortVal === 'created') filtered.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
     grid.innerHTML = '';
     if (!filtered.length){
-      const empty = document.createElement('div'); empty.className='muted'; empty.textContent = 'No avatars.'; grid.appendChild(empty); updateAvatarCount(0, list.length); return;
+      const empty = document.createElement('div'); empty.className='muted'; empty.textContent = 'No avatars.'; grid.appendChild(empty); updateAvatarCount(0, list.length); renderAvatarGroupFilter(list, groupFilter); return;
     }
     const bulk = !!document.getElementById('av-bulk-toggle')?.checked;
     const selectedSet = window.__avSel || (window.__avSel = new Set());
-    for (const a of filtered){
-      const card = document.createElement('div');
-      card.style.cssText='position:relative;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);font-size:11px;';
-      card.innerHTML = `
-        <img src="${a.url||''}" alt="${a.name}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;${a.url?'':'display:none'}"/>
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">${a.name||'(unnamed)'}</span>
-      `;
-      if (bulk){
-        const cb=document.createElement('input'); cb.type='checkbox'; cb.style.cssText='position:absolute;top:6px;left:6px;'; cb.checked = selectedSet.has(a.id);
-        cb.addEventListener('change', ()=>{ if(cb.checked) selectedSet.add(a.id); else selectedSet.delete(a.id); updateBulkButtons(); });
-        card.appendChild(cb);
-      } else {
-        card.style.cursor='pointer';
-        card.addEventListener('click', ()=>{ selectAvatar(a, list); chrome.storage.sync.set({ [STORAGE_KEYS.avatarLast]: a.id }); });
+    chrome.storage.sync.get({ [STORAGE_KEYS.avatarLast]: '' }, (st)=>{
+      const lastId = st[STORAGE_KEYS.avatarLast] || '';
+      for (const a of filtered){
+        const card = document.createElement('div');
+        card.className = 'avatar-card';
+        if (lastId === a.id && !bulk) card.classList.add('selected');
+        const tagsHtml = (a.tags||[]).slice(0,2).map(t=>`<span class="tag-chip" title="${escapeAttr(t)}">${escapeAttr(t)}</span>`).join('');
+        const imgHtml = a.url ? `<img src="${escapeAttr(a.url)}" alt="${escapeAttr(a.name)}"/>` : `<div class="avatar-placeholder">No Image</div>`;
+        card.innerHTML = `
+          <div class="avatar-thumb">${imgHtml}</div>
+          <div class="avatar-name" title="${escapeAttr(a.name)}">${escapeAttr(a.name||'(unnamed)')}</div>
+          ${a.group? `<div class="group-badge" title="${escapeAttr(a.group)}">${escapeAttr(a.group)}</div>`:''}
+          <div class="avatar-tags">${tagsHtml}</div>
+        `;
+        if (bulk){
+          const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = selectedSet.has(a.id);
+          cb.addEventListener('change', ()=>{ if(cb.checked) selectedSet.add(a.id); else selectedSet.delete(a.id); updateBulkButtons(); });
+          card.appendChild(cb);
+        } else {
+          card.addEventListener('click', ()=>{
+            selectAvatar(a, list);
+            chrome.storage.sync.set({ [STORAGE_KEYS.avatarLast]: a.id });
+            // Update selected highlighting
+            $$('#av-grid .avatar-card.selected').forEach(el=> el.classList.remove('selected'));
+            card.classList.add('selected');
+          });
+        }
+        grid.appendChild(card);
       }
-      grid.appendChild(card);
-    }
-    updateBulkButtons();
-    updateAvatarCount(filtered.length, list.length);
-    renderAvatarGroupFilter(list, groupFilter);
+      updateBulkButtons();
+      updateAvatarCount(filtered.length, list.length);
+      renderAvatarGroupFilter(list, groupFilter);
+    });
+  }
+  function escapeAttr(str){
+    return String(str||'').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
   }
   function updateBulkButtons(){
     const bulk = !!document.getElementById('av-bulk-toggle')?.checked;

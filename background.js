@@ -14,4 +14,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
+  if (msg.type === 'yl50-reopen-popup') {
+    // Attempt to reopen extension popup (MV3 chrome.action.openPopup). Fails silently if not allowed.
+    try {
+      if (chrome.action && chrome.action.openPopup) {
+        chrome.action.openPopup().catch(()=>{});
+      }
+    } catch {}
+    sendResponse && sendResponse({ ok:true });
+    return true;
+  }
 });
