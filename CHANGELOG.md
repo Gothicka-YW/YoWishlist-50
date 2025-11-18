@@ -1,5 +1,11 @@
 # YoCatalog Changelog
 
+## 1.5.1 - 2025-11-14
+- UX: Added an inline notice banner for concise success/error messages in the popup.
+- Import/Export: Standardized messages and added an import summary showing counts for Wish Lists, Images, and Avatars.
+- Cleanup: Removed a duplicate Export JSON handler to avoid double downloads; kept the full, centralized Settings export.
+- Safety: Added delete confirmations for Wish Lists and Images saved entries.
+
 ## 1.5.0 - 2025-11-13
 - Rename: Project renamed from "YoWishlist-50" to "YoCatalog". Updated manifest name/title, README, footer Privacy Policy link, and in-app strings.
 - Home: Header now says "Welcome to YoCatalog!" and includes a new "Open Help Guide" link.

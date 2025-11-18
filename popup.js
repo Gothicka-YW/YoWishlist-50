@@ -32,6 +32,24 @@
     , imagesSavedLast: 'yl50_images_saved_last'
     , imagesIncludeTitle: 'yl50_images_include_title'
   };
+  // Inline notice helper
+  let __noticeTimer = null;
+  function showNotice(type, message, timeout=2500){
+    try{
+      const box = document.getElementById('notice');
+      const text = document.getElementById('notice-text');
+      if(!box || !text) { alert(String(message||'')); return; }
+      box.classList.remove('notice-success','notice-error','notice-info');
+      const cls = type==='error' ? 'notice-error' : (type==='success' ? 'notice-success' : 'notice-info');
+      box.classList.add(cls);
+      text.textContent = String(message||'');
+      box.style.display = 'block';
+      const closer = document.getElementById('notice-close');
+      if (closer && !closer.__wired){ closer.__wired = true; closer.addEventListener('click', ()=>{ box.style.display='none'; }); }
+      if (__noticeTimer) clearTimeout(__noticeTimer);
+      __noticeTimer = setTimeout(()=>{ box.style.display='none'; }, Math.max(1200, timeout|0));
+    }catch{ try{ alert(String(message||'')); }catch{} }
+  }
   chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'home', yl50_include_title:true, yl50_avatars:[], yl50_avatar_cap:'100', yl50_avatar_last:'', yl50_avatar_last_group:'', yl50_avatar_search:'', yl50_images_saved_entries:[], yl50_images_saved_last:'', yl50_images_include_title:true }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     if (document.getElementById('columns')) document.getElementById('columns').value = res.yl50_columns || 5;
@@ -77,7 +95,7 @@
         const ok = (url.hostname && url.hostname.endsWith('yoworld.info')) && (url.pathname || '').includes('template');
         if (ok) { cb(tab.id); return; }
       } catch(e){}
-      alert('Screen Grab works only on yoworld.info/template. Use "Open template page" to navigate there.');
+      showNotice('info', 'Screen Grab works only on yoworld.info/template. Use "Open template page" to navigate there.');
     });
   }
 
@@ -255,7 +273,7 @@
       replaceBtn.onclick = ()=>{
         // Use staged dataUrl from av-image-url dataset if present
         const staged = document.getElementById('av-image-url')?.dataset?.dataUrl || '';
-        if(!staged){ alert('Load/paste a new image first.'); return; }
+        if(!staged){ showNotice('error', 'Load/paste a new image first.'); return; }
         uploadAvatarDataUrl(staged, (url)=>{
           loadAvatars(entries=>{
             const idx = entries.findIndex(e=> e.id===avatar.id); if(idx<0) return;
@@ -277,12 +295,12 @@
   // Upload & Save new avatar
   if (document.getElementById('av-btn-upload')){
     document.getElementById('av-btn-upload').addEventListener('click', ()=>{
-      const name = String(document.getElementById('av-name')?.value||'').trim(); if(!name){ alert('Enter a name.'); return; }
+      const name = String(document.getElementById('av-name')?.value||'').trim(); if(!name){ showNotice('error', 'Enter a name.'); return; }
       const group = String(document.getElementById('av-group')?.value||'').trim();
       const tagsRaw = document.getElementById('av-tags')?.value||'';
       const desc = String(document.getElementById('av-desc')?.value||'').trim();
       const staged = document.getElementById('av-image-url')?.dataset?.dataUrl || '';
-      if(!staged){ alert('Load or paste an image first.'); return; }
+      if(!staged){ showNotice('error', 'Load or paste an image first.'); return; }
       uploadAvatarDataUrl(staged, (url)=>{
         loadAvatars(entries=>{
           const cap = avatarCapValue();
@@ -349,7 +367,7 @@
       try { url = await uploadDataUrlImgBB(dataUrl); }
       catch(e1){ if(status) status.textContent='imgbb failed, trying catbox…'; try { url = await uploadDataUrlCatbox(dataUrl); } catch(e2){ if(status) status.textContent='All uploads failed.'; throw e2; } }
       if(status) status.textContent='Done.'; done && done(url);
-    })().catch(e=>{ alert('Upload failed: '+(e&&e.message||e)); });
+    })().catch(e=>{ showNotice('error', 'Upload failed: ' + (e&&e.message||e)); });
   }
   // Filters & search wiring
   if (document.getElementById('av-group-filter')){
@@ -382,48 +400,47 @@
       });
     });
   }
-  if (document.getElementById('av-btn-export-selected')){
-    document.getElementById('av-btn-export-selected').addEventListener('click', ()=>{
-      const sel = window.__avSel || new Set(); if (!sel.size) return;
-      loadAvatars(entries=>{
-        const chosen = entries.filter(e=> sel.has(e.id));
-        const blob = new Blob([JSON.stringify({ yl50_avatars: chosen }, null, 2)], { type:'application/json' });
-        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='avatars-selected.json'; a.click(); setTimeout(()=> URL.revokeObjectURL(url), 1200);
+  // Avatars JSON import/export are centralized in Settings; removed per standards.
+  if (document.getElementById('btn-export-json')){
+    document.getElementById('btn-export-json').addEventListener('click', ()=>{
+      chrome.storage.sync.get(null, (all)=>{
+        const data = {
+          // Wish Lists
+          yl50_saved_entries: all[STORAGE_KEYS.savedEntries] || [],
+          yl50_saved_cap: all[STORAGE_KEYS.savedCap] || '50',
+          yl50_saved_last: all[STORAGE_KEYS.savedLast] || '',
+          yl50_include_title: all[STORAGE_KEYS.includeTitle] !== false,
+          // Images tab
+          yl50_images_saved_entries: all[STORAGE_KEYS.imagesSavedEntries] || [],
+          yl50_images_saved_last: all[STORAGE_KEYS.imagesSavedLast] || '',
+          yl50_images_include_title: all[STORAGE_KEYS.imagesIncludeTitle] !== false,
+          // Avatars
+          yl50_avatars: all[STORAGE_KEYS.avatars] || [],
+          yl50_avatar_cap: all[STORAGE_KEYS.avatarCap] || '100',
+          yl50_avatar_last: all[STORAGE_KEYS.avatarLast] || '',
+          yl50_avatar_last_group: all[STORAGE_KEYS.avatarLastGroup] || 'all',
+          yl50_avatar_search: all[STORAGE_KEYS.avatarSearch] || '',
+          // Preferences & settings
+          yl50_theme: all[STORAGE_KEYS.theme] || 'default',
+          yl50_header_font: all[STORAGE_KEYS.headerFont] || '',
+          yl50_auto_switch_share: all[STORAGE_KEYS.autoSwitchShare] !== false,
+          yl50_limit: all[STORAGE_KEYS.limit] || 50,
+          yl50_columns: all[STORAGE_KEYS.columns] || 5,
+          yl50_scope_name: all[STORAGE_KEYS.scopeName] || '',
+          yl50_container: all[STORAGE_KEYS.container] || '',
+          yl50_card: all[STORAGE_KEYS.card] || '',
+          yl50_selectors: all[STORAGE_KEYS.hint] || '',
+          yl50_imgbb_key: all[STORAGE_KEYS.imgbbKey] || ''
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'yowishlist50-export.json'; a.click();
+        setTimeout(()=> URL.revokeObjectURL(url), 1500);
+        showNotice('success', 'Exported JSON (yowishlist50-export.json)');
       });
     });
   }
-  if (document.getElementById('av-btn-export-json')){
-    document.getElementById('av-btn-export-json').addEventListener('click', ()=>{
-      loadAvatars(entries=>{
-        chrome.storage.sync.get({ [STORAGE_KEYS.avatarCap]: '100' }, r=>{
-          const data = { yl50_avatars: entries, yl50_avatar_cap: r[STORAGE_KEYS.avatarCap]||'100' };
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
-          const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='yowishlist50-avatars.json'; a.click(); setTimeout(()=> URL.revokeObjectURL(url), 1200);
-        });
-      });
-    });
-  }
-  if (document.getElementById('av-btn-import-json')){
-    document.getElementById('av-btn-import-json').addEventListener('click', ()=> document.getElementById('av-import-file')?.click());
-    document.getElementById('av-import-file')?.addEventListener('change', (e)=>{
-      const f = e.target.files && e.target.files[0]; if(!f) return;
-      const r = new FileReader(); r.onload = ()=>{
-        try{
-          const obj = JSON.parse(String(r.result||'{}'));
-          const avatars = sanitizeAvatars(Array.isArray(obj.yl50_avatars)? obj.yl50_avatars : []);
-          const cap = String(obj.yl50_avatar_cap || document.getElementById('av-cap-select')?.value || '100');
-          chrome.storage.sync.set({ [STORAGE_KEYS.avatarCap]: cap }, ()=>{
-            const final = enforceAvatarCap(avatars, cap);
-            saveAvatars(final, ()=>{
-              renderAvatarGrid(final, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
-              alert('Avatars import complete.');
-            });
-          });
-        } catch(e){ alert('Import failed: ' + (e&&e.message||e)); }
-      };
-      r.readAsText(f);
-    });
-  }
+  // Removed legacy Avatars import handler block (now handled via Settings import).
   // Placeholder for compression toggle (future integration). Currently no-op except stored value.
   if (document.getElementById('av-compress')){
     document.getElementById('av-compress').addEventListener('change', ()=>{
@@ -635,7 +652,7 @@
   if (document.getElementById('btn-clear-selectors')){
     document.getElementById('btn-clear-selectors').addEventListener('click', ()=>{
       chrome.storage.sync.set({ yl50_container:'', yl50_card:'', yl50_selectors:'', yl50_scope:'wish' }, ()=>{
-        alert('Selectors reset. Use Pick card selector again if needed.');
+        showNotice('success', 'Selectors reset. Use Pick card selector again if needed.');
       });
     });
   }
@@ -724,7 +741,7 @@
   if (document.getElementById('btn-saved-save')){
     document.getElementById('btn-saved-save').addEventListener('click', async()=>{
       const input = document.getElementById('saved-title'); const base = normalizeTitle(input?.value||'');
-      if (!base){ alert('Enter a title to save.'); return; }
+      if (!base){ showNotice('error', 'Enter a title to save.'); return; }
       loadSavedEntries(async(entries)=>{
         const existsIdx = entries.findIndex(e => normalizeTitle(e.title) === base);
         const status = document.getElementById('upload-status');
@@ -744,8 +761,8 @@
                 // Commit staged image as the active one in UI
                 const iu = document.getElementById('image-url'); if (iu){ iu.value = urlToUse; delete iu.dataset.dataUrl; }
               }
-            } catch(e){ if (status) status.textContent = 'Upload failed.'; alert('Upload failed: ' + (e&&e.message||e)); return; }
-            if (!urlToUse){ alert('No image loaded. Load/paste an image and Upload, then try again.'); return; }
+            } catch(e){ if (status) status.textContent = 'Upload failed.'; showNotice('error', 'Upload failed: ' + (e&&e.message||e)); return; }
+            if (!urlToUse){ showNotice('error', 'No image loaded. Load/paste an image and Upload, then try again.'); return; }
             entries[existsIdx].url = urlToUse; entries[existsIdx].updatedAt = Date.now();
             saveSavedEntries(entries, ()=>{
               loadSavedEntries((fresh)=>{
@@ -775,8 +792,8 @@
   }
   if (document.getElementById('btn-saved-rename')){
     document.getElementById('btn-saved-rename').addEventListener('click', ()=>{
-      const sel = document.getElementById('saved-select'); if(!sel || !sel.value){ alert('Select an entry to rename.'); return; }
-      const input = document.getElementById('saved-title'); const base = normalizeTitle(input?.value||''); if(!base){ alert('Enter a new title.'); return; }
+      const sel = document.getElementById('saved-select'); if(!sel || !sel.value){ showNotice('error', 'Select an entry to rename.'); return; }
+      const input = document.getElementById('saved-title'); const base = normalizeTitle(input?.value||''); if(!base){ showNotice('error', 'Enter a new title.'); return; }
       loadSavedEntries((entries)=>{
         const idx = entries.findIndex(e=> e.title === sel.value);
         if (idx < 0) return;
@@ -798,13 +815,16 @@
   if (document.getElementById('btn-saved-delete')){
     document.getElementById('btn-saved-delete').addEventListener('click', ()=>{
       const sel = document.getElementById('saved-select'); if(!sel || !sel.value) return;
+      const title = sel.value;
+      if (!confirm(`Delete "${title}"?`)) return;
       loadSavedEntries((entries)=>{
-        const next = entries.filter(e=> e.title !== sel.value);
+        const next = entries.filter(e=> e.title !== title);
         saveSavedEntries(next, ()=>{
           loadSavedEntries((fresh)=>{
             renderSavedSelect(fresh);
             updatePreviewAndFieldsFromEntry(null);
             chrome.storage.sync.set({ [STORAGE_KEYS.savedLast]: '' });
+            showNotice('success', `Deleted "${title}".`);
           });
         });
       });
@@ -1024,7 +1044,7 @@
       const status=document.getElementById('images-upload-status');
       try{
         const staged = document.getElementById('images-image-url')?.dataset?.dataUrl || '';
-        if(!staged){ alert('No image loaded.'); return; }
+        if(!staged){ showNotice('error', 'No image loaded.'); return; }
         document.getElementById('images-btn-upload').disabled=true; document.getElementById('images-btn-upload').textContent='Uploading…';
         if(status) status.textContent='Trying imgbb…';
         let url='';
@@ -1042,7 +1062,7 @@
           const fl=document.getElementById('images-forum-link'); if(fl){ const inc=!!document.getElementById('images-include-title')?.checked; const t=document.getElementById('images-saved-title')?.value||''; fl.value = inc ? makeForumLink(url, t) : `[img]${url}[/img]`; }
           imagesSetNoImageHint();
         });
-      } catch(e){ if(status) status.textContent='Upload failed.'; alert('Upload failed: ' + (e&&e.message||e)); }
+      } catch(e){ if(status) status.textContent='Upload failed.'; showNotice('error', 'Upload failed: ' + (e&&e.message||e)); }
       finally { const b=document.getElementById('images-btn-upload'); if(b){ b.disabled=false; b.textContent='Upload'; } }
     });
   }
@@ -1054,16 +1074,27 @@
   });
   // Images: save/rename/delete/load
   if (document.getElementById('images-btn-save')) document.getElementById('images-btn-save').addEventListener('click', ()=>{
-    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ alert('Enter a title to save.'); return; }
+    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ showNotice('error', 'Enter a title to save.'); return; }
     imagesLoadEntries((entries)=>{ const title = imagesNextUniqueTitle(entries, base); const now=Date.now(); const next=[...entries, { title, url:'', updatedAt:0, createdAt:now }]; imagesSaveEntries(next, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh, title); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: title }); })); });
   });
   if (document.getElementById('images-btn-rename')) document.getElementById('images-btn-rename').addEventListener('click', ()=>{
-    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value){ alert('Select an entry to rename.'); return; }
-    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ alert('Enter a new title.'); return; }
+    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value){ showNotice('error', 'Select an entry to rename.'); return; }
+    const base = imagesNormalizeTitle(document.getElementById('images-saved-title')?.value||''); if(!base){ showNotice('error', 'Enter a new title.'); return; }
     imagesLoadEntries((entries)=>{ const idx=entries.findIndex(e=> e.title===sel.value); if(idx<0) return; let newTitle=base; if(imagesNormalizeTitle(newTitle).toLowerCase() !== imagesNormalizeTitle(entries[idx].title).toLowerCase()){ newTitle = imagesNextUniqueTitle(entries.filter((_,i)=>i!==idx), base); } entries[idx].title=newTitle; imagesSaveEntries(entries, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh, newTitle); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: newTitle }); })); });
   });
   if (document.getElementById('images-btn-delete')) document.getElementById('images-btn-delete').addEventListener('click', ()=>{
-    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value) return; imagesLoadEntries((entries)=>{ const next=entries.filter(e=> e.title!==sel.value); imagesSaveEntries(next, ()=> imagesLoadEntries(fresh=>{ imagesRenderSelect(fresh); imagesUpdatePreview(null); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: '' }); })); });
+    const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value) return;
+    const title = sel.value;
+    if (!confirm(`Delete "${title}"?`)) return;
+    imagesLoadEntries((entries)=>{
+      const next=entries.filter(e=> e.title!==title);
+      imagesSaveEntries(next, ()=> imagesLoadEntries(fresh=>{
+        imagesRenderSelect(fresh);
+        imagesUpdatePreview(null);
+        chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: '' });
+        showNotice('success', `Deleted "${title}".`);
+      }));
+    });
   });
   if (document.getElementById('images-btn-load')) document.getElementById('images-btn-load').addEventListener('click', ()=>{
     const sel=document.getElementById('images-saved-select'); if(!sel||!sel.value) return; imagesLoadEntries((entries)=>{ const entry=entries.find(e=> e.title===sel.value); if(!entry) return; const input=document.getElementById('images-saved-title'); if(input) input.value=entry.title; imagesUpdatePreview(entry); chrome.storage.sync.set({ [STORAGE_KEYS.imagesSavedLast]: entry.title }); });
@@ -1072,7 +1103,7 @@
     document.getElementById('btn-upload').addEventListener('click', async()=>{
       const status = document.getElementById('upload-status');
       try{
-        let dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) { alert('No image loaded. Load or paste an image first.'); return; }
+        let dataUrl = $('#image-url').dataset.dataUrl; if(!dataUrl) { showNotice('error', 'No image loaded. Load or paste an image first.'); return; }
         document.getElementById('btn-upload').disabled = true; document.getElementById('btn-upload').textContent = 'Uploading…';
         if (status) status.textContent = 'Trying imgbb…';
         let url = '';
@@ -1128,7 +1159,7 @@
         setNoImageHint();
       } catch(e){
         if (status) status.textContent = 'Upload failed.';
-        alert('Upload failed: ' + (e&&e.message||e));
+        showNotice('error', 'Upload failed: ' + (e&&e.message||e));
       } finally {
         document.getElementById('btn-upload').disabled = false; document.getElementById('btn-upload').textContent = 'Upload';
       }
@@ -1205,7 +1236,7 @@
         if ($('#saved-cap-select')) $('#saved-cap-select').value = '50';
         renderSavedSelect([]);
         setNoImageHint();
-        alert('Settings reset.');
+        showNotice('success', 'Settings reset.');
       });
     });
   }
@@ -1286,14 +1317,14 @@
   if (document.getElementById('btn-test-imgbb')){
     document.getElementById('btn-test-imgbb').addEventListener('click', async()=>{
       const key = ($('#imgbb-key').value||'').trim();
-      if(!key){ alert('Enter your imgbb API key first.'); return; }
+      if(!key){ showNotice('error', 'Enter your imgbb API key first.'); return; }
       try{
         const u = new URL('https://api.imgbb.com/1');
         u.searchParams.set('key', key);
         const res = await fetch(u.toString(), { method:'GET' });
-        if (res.ok) alert('Key looks valid (request ok).');
-        else alert('Key test failed: ' + res.status + ' ' + res.statusText);
-      } catch(e){ alert('Key test error: ' + (e&&e.message||e)); }
+        if (res.ok) showNotice('success', 'Key looks valid (request ok).');
+        else showNotice('error', 'Key test failed: ' + res.status + ' ' + res.statusText);
+      } catch(e){ showNotice('error', 'Key test error: ' + (e&&e.message||e)); }
     });
   }
 
@@ -1329,25 +1360,6 @@
   }
 
   // Import/Export JSON
-  if (document.getElementById('btn-export-json')){
-    document.getElementById('btn-export-json').addEventListener('click', ()=>{
-      chrome.storage.sync.get(null, (all)=>{
-        const data = {
-          yl50_saved_entries: all[STORAGE_KEYS.savedEntries] || [],
-          yl50_saved_cap: all[STORAGE_KEYS.savedCap] || '50',
-          yl50_theme: all[STORAGE_KEYS.theme] || 'default',
-          yl50_header_font: all[STORAGE_KEYS.headerFont] || 'sans',
-          yl50_auto_switch_share: all[STORAGE_KEYS.autoSwitchShare] !== false,
-          yl50_limit: all[STORAGE_KEYS.limit] || 50,
-          yl50_scope_name: all[STORAGE_KEYS.scopeName] || ''
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'yowishlist50-export.json'; a.click();
-        setTimeout(()=> URL.revokeObjectURL(url), 1500);
-      });
-    });
-  }
   if (document.getElementById('btn-import-json')){
     document.getElementById('btn-import-json').addEventListener('click', ()=> document.getElementById('import-file').click());
     document.getElementById('import-file').addEventListener('change', (e)=>{
@@ -1356,33 +1368,89 @@
       r.onload = ()=>{
         try{
           const obj = JSON.parse(String(r.result||'{}'));
-          const entries = Array.isArray(obj.yl50_saved_entries) ? obj.yl50_saved_entries : [];
-          const cap = String(obj.yl50_saved_cap || '50');
+          // Pull values with sane defaults
+          const wlEntries = Array.isArray(obj.yl50_saved_entries) ? obj.yl50_saved_entries : [];
+          const wlCap = String(obj.yl50_saved_cap || '50');
+          const wlLast = String(obj.yl50_saved_last || '');
+          const wlIncludeTitle = !!obj.yl50_include_title;
+
+          const imgEntries = Array.isArray(obj.yl50_images_saved_entries) ? obj.yl50_images_saved_entries : [];
+          const imgLast = String(obj.yl50_images_saved_last || '');
+          const imgIncludeTitle = !!obj.yl50_images_include_title;
+
+          const avatars = Array.isArray(obj.yl50_avatars) ? sanitizeAvatars(obj.yl50_avatars) : [];
+          const avCap = String(obj.yl50_avatar_cap || '100');
+          const avLast = String(obj.yl50_avatar_last || '');
+          const avLastGroup = String(obj.yl50_avatar_last_group || 'all');
+          const avSearch = String(obj.yl50_avatar_search || '');
+
           const theme = obj.yl50_theme || 'default';
-          const headerFont = obj.yl50_header_font || 'sans';
+          const headerFont = obj.yl50_header_font || '';
           const auto = !!obj.yl50_auto_switch_share;
           const limit = Number(obj.yl50_limit||50);
+          const columns = Number(obj.yl50_columns||5);
           const scopeName = String(obj.yl50_scope_name||'');
+          const container = String(obj.yl50_container||'');
+          const card = String(obj.yl50_card||'');
+          const selectors = String(obj.yl50_selectors||'');
+          const imgbbKey = String(obj.yl50_imgbb_key||'');
+
+          // Prepare lists with caps applied
+          const wlFinal = enforceCap(wlEntries, wlCap);
+          const avFinal = enforceAvatarCap(avatars, avCap);
+
           chrome.storage.sync.set({
-            [STORAGE_KEYS.savedEntries]: enforceCap(entries, cap),
-            [STORAGE_KEYS.savedCap]: cap,
+            // Wish Lists
+            [STORAGE_KEYS.savedEntries]: wlFinal,
+            [STORAGE_KEYS.savedCap]: wlCap,
+            [STORAGE_KEYS.savedLast]: wlLast,
+            [STORAGE_KEYS.includeTitle]: wlIncludeTitle,
+            // Images
+            [STORAGE_KEYS.imagesSavedEntries]: imgEntries,
+            [STORAGE_KEYS.imagesSavedLast]: imgLast,
+            [STORAGE_KEYS.imagesIncludeTitle]: imgIncludeTitle,
+            // Avatars
+            [STORAGE_KEYS.avatars]: avFinal,
+            [STORAGE_KEYS.avatarCap]: avCap,
+            [STORAGE_KEYS.avatarLast]: avLast,
+            [STORAGE_KEYS.avatarLastGroup]: avLastGroup,
+            [STORAGE_KEYS.avatarSearch]: avSearch,
+            // Preferences & settings
             [STORAGE_KEYS.theme]: theme,
             [STORAGE_KEYS.headerFont]: headerFont,
             [STORAGE_KEYS.autoSwitchShare]: auto,
             [STORAGE_KEYS.limit]: limit,
-            [STORAGE_KEYS.scopeName]: scopeName
+            [STORAGE_KEYS.columns]: columns,
+            [STORAGE_KEYS.scopeName]: scopeName,
+            [STORAGE_KEYS.container]: container,
+            [STORAGE_KEYS.card]: card,
+            [STORAGE_KEYS.hint]: selectors,
+            [STORAGE_KEYS.imgbbKey]: imgbbKey
           }, ()=>{
+            // Apply UI updates
             applyTheme(theme); if ($('#theme-select')) $('#theme-select').value = theme;
             applyCustomHeaderFont(headerFont); if ($('#header-font-select')) $('#header-font-select').value = headerFont;
             if ($('#auto-switch-share')) $('#auto-switch-share').checked = auto;
             if ($('#limit')) $('#limit').value = limit;
+            if (document.getElementById('columns')) document.getElementById('columns').value = columns;
             if ($('#scope-name')) $('#scope-name').value = scopeName;
-            if ($('#saved-cap-select')) $('#saved-cap-select').value = cap;
-            loadSavedEntries((ents)=> renderSavedSelect(ents));
-            alert('Import complete.');
+            if ($('#imgbb-key')) $('#imgbb-key').value = imgbbKey;
+            // Wish Lists
+            if ($('#saved-cap-select')) $('#saved-cap-select').value = wlCap;
+            if ($('#include-title')) $('#include-title').checked = wlIncludeTitle;
+            loadSavedEntries((ents)=>{ renderSavedSelect(ents, wlLast || undefined); });
+            // Images
+            imagesLoadEntries((ents)=>{ imagesRenderSelect(ents, imgLast || undefined); });
+            if (document.getElementById('images-include-title')) document.getElementById('images-include-title').checked = imgIncludeTitle;
+            // Avatars
+            initAvatars(avFinal, avLast, avLastGroup, avSearch);
+            const wlCount = Array.isArray(wlFinal) ? wlFinal.length : 0;
+            const imgCount = Array.isArray(imgEntries) ? imgEntries.length : 0;
+            const avCount = Array.isArray(avFinal) ? avFinal.length : 0;
+            showNotice('success', `Import complete — Wish Lists: ${wlCount}, Images: ${imgCount}, Avatars: ${avCount}`);
           });
         } catch(e){
-          alert('Import failed: ' + (e&&e.message||e));
+          showNotice('error', 'Import failed: ' + (e&&e.message||e));
         }
       };
       r.readAsText(f);
