@@ -1,28 +1,30 @@
-YoWishlist 50 — Privacy Policy
-Effective date: October 8, 2025
+YoCatalog — Privacy Policy
+Effective date: November 18, 2025
 
 Who we are
-YoWishlist 50 is a free, open‑source Chrome extension that helps YoWorld forum users collect and share wish lists. The project is maintained publicly on GitHub at:
-  https://github.com/Gothicka-YW/YoWishlist-50
+YoCatalog (formerly "YoWishlist 50") is a free, open‑source Chrome extension that helps YoWorld users capture Screens, manage Lists and Images, and catalog Avatars. The project is maintained publicly on GitHub at:
+   https://github.com/Gothicka-YW/YoWishlist-50
+Note: The repository name may still reflect the prior project name.
 
 This policy explains what data the extension accesses, stores, or transmits, and for what purpose.
 
 What data the extension processes
 1) On-device (default behavior)
-   - Saved items: The “Saved” list stores a title and an image URL you chose. This is kept in Chrome’s extension storage (chrome.storage.sync) under your Google account and may sync across your Chrome profiles if sync is enabled.
-   - Settings: The extension stores options such as limit, columns (grid estimate), theme, header font, include-title toggle, and your last opened tab. If you provide an imgbb API key, it is stored in chrome.storage.sync as well.
-   - Picked selectors (optional): If you use “Pick card selector”, the extension saves a CSS selector for the grid container and card elements, plus the index of the clicked tile. This helps start crops from the intended row even after you change the Limit. These values are stored in chrome.storage.sync and only apply to yoworld.info pages. You can clear them via “Reset selectors” in the popup.
-   - Temporary images: Images that you paste, drop, or load into the Share tab are processed locally in the popup and are not transmitted anywhere unless you explicitly choose to upload.
+   - Saved items: The Lists and Images tabs store entries you save (title and the hosted image URL). The Avatars tab stores metadata you enter (name, group, tags, description) and the associated image URL. This information is kept in Chrome’s extension storage (chrome.storage.sync) under your Google account and may sync across your Chrome profiles if sync is enabled.
+   - Settings & preferences: The extension stores options such as limit, columns (grid estimate), theme, header font, include‑title toggle, last opened tab, and caps for saved items. If you provide an imgbb API key, it is stored in chrome.storage.sync as well.
+   - Drafts (optional convenience): The extension may store in‑progress drafts like the current Lists title and Avatars field values so you don’t lose work if the popup closes unexpectedly. Drafts reside in chrome.storage.sync/local depending on availability.
+   - Picked selectors (optional): If you use “Pick card selector”, the extension saves a CSS selector for the grid container and card elements, plus the index of the clicked tile. This anchors previews/exports to your chosen container and helps start crops from the intended row even after you change the Limit. These values are stored in chrome.storage.sync and only apply to yoworld.info pages. You can clear them via “Reset selectors” in the popup.
+   - Temporary images: Images that you paste, drop, or load into the Lists or Images tabs are processed locally in the popup and are not transmitted anywhere unless you explicitly choose to upload.
 
 2) Page access (yoworld.info only)
    - The content script reads the structure of pages on yoworld.info to detect and list items for preview/export. The extension does not collect personal information from these pages and does not transmit page content to any server.
    - When you trigger a cropped export, the extension captures and stitches screenshots of the current tab locally to create an image for download. During capture, it may temporarily hide sticky/fixed headers and apply a white background to avoid obstructions and ensure clean edges; these style changes are reverted immediately after capture. Captures are used only to build your export and are not sent anywhere by the extension.
 
 Uploads to third‑party services (only when you click “Upload”)
-If you press Upload in the Share tab, the image you selected is sent to an external hosting provider to obtain a shareable URL. The extension may use:
+If you press Upload in the Lists or Images tab (or when replacing an Avatar image), the image you selected is sent to an external hosting provider to obtain a shareable URL. The extension may use:
    - imgbb.com (requires your API key)
    - catbox.moe (fallback)
-   - postimages.org (host permission present; best‑effort usage)
+   - postimages.org (host permission present; best‑effort usage on Lists)
 Your use of these services is governed by their own terms and privacy policies. The extension does not control what those services do with your uploaded image. No other data (such as your saved entries or settings) is sent to these services.
 
 What the extension does NOT do
@@ -40,7 +42,7 @@ Permissions explained
    - host_permissions: Access only the listed domains (yoworld.info, imgbb.com, postimages.org, catbox.moe) for their specific features.
 
 Data retention and control
-   - In-extension data (Saved entries, settings, API keys) persists until you remove it, reset settings, or uninstall the extension. You can:
+      - In-extension data (Saved entries, drafts, settings, API keys) persists until you remove it, reset settings, or uninstall the extension. You can:
        • Delete Saved entries individually from the Share tab.
        • Reset settings from the Settings tab.
    • Reset picked selectors from the Main tab using “Reset selectors”.
@@ -59,4 +61,4 @@ Changes to this policy
 
 Contact
 If you have questions or requests regarding this policy, please open an issue on the project’s GitHub repository:
-  https://github.com/Gothicka-YW/YoWishlist-50
+   https://github.com/Gothicka-YW/YoWishlist-50

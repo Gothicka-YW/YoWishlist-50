@@ -7,10 +7,10 @@ YoCatalog is a fan-made Chrome extension for organizing and sharing content for 
 
 - Avatars: Create a personal avatar catalog with groups, tags, descriptions, and image hosting.
 - Screen Grab: Capture and export a stitched image from the YoWorld template page for clean wish list or sales posts.
-- Wish Lists: Upload, name, save, and reuse images with quick forum BBCode.
+- Lists (formerly Wish Lists): Upload, name, save, and reuse images with quick forum BBCode.
 - Images: A second, separate image library with the same upload/save tools (for banners, art, etc.).
 
-The popup remembers your last tab and keeps a consistent width for a smooth workflow.
+The popup remembers your last tab and keeps a consistent width for a smooth workflow. It also persists `Limit`, `Scope`, your Lists title draft, and Avatars field drafts so you won’t lose work if the popup closes.
 
 No accounts or servers are required; your data is stored in Chrome storage. This tool isn’t affiliated with YoWorld or Big Viking Games.
 
@@ -25,8 +25,9 @@ No accounts or servers are required; your data is stored in Chrome storage. This
 - Catalog entries include: name, optional group, tags (comma-separated), optional description, and an image URL.
 - Add avatars by loading, dropping, or pasting an image; upload to get a hosted URL.
 - Search across name, group, tags, and description; filter by group; sort by name or recency.
-- Preview pane with actions: Save meta, Replace image, Copy URL, Copy BBCode, Download, Delete.
-- Bulk select with Delete and Export Selected JSON.
+- Preview pane with actions: Save meta, Replace image, Copy URL, Copy BBCode, Download, Delete. The preview appears below the controls for better visibility.
+- Bulk select with Delete and Export Selected JSON. You can click anywhere on a card to toggle its selection.
+- Duplicate name protection: If you try to save an avatar with an existing name, you’ll be asked to confirm replacing it.
 - Export/Import all avatars JSON. Unlimited or capped entries (see Settings).
 - Optional “Compress PNG (lossless)” toggle saves a local preference for future compression features.
 
@@ -45,10 +46,10 @@ No accounts or servers are required; your data is stored in Chrome storage. This
 	- Open template page: Opens https://yoworld.info/template in a new tab.
 - Tips:
 	- Keep the template page visible during export to ensure a full, clean capture.
-	- Pick card selector once if detection misses your grid.
+	- Pick card selector once if detection misses your grid. Previews/exports are anchored to the container you clicked, so the crop starts at the exact tile you picked.
 	- Use Scope for more reliable targeting when multiple sections exist.
 
-### Wish Lists
+### Lists
 - Saved entries: name/title + image URL, with date-stamped dropdown for quick reuse.
 - Load/Drop/Paste an image, Upload to host it, then copy URL or forum BBCode.
 - Include-title toggle: Prepends [b]Title[/b] on the BBCode link when enabled.
@@ -66,7 +67,7 @@ No accounts or servers are required; your data is stored in Chrome storage. This
 - Avatar max entries cap: 50/100/200/Unlimited.
 - Theme: Default, Midnight, Yo Pink, Emerald, High Contrast.
 - Header font: Uses locally-available fonts listed in `fonts/fonts.css`.
-- Switch to Wish Lists after capture: Automatically jumps to Wish Lists after Export (crop).
+- Switch to Lists after capture: Automatically jumps to Lists after Export (crop).
 - Reset settings: Clears stored options and saved state (non-destructive to images already uploaded online).
 - Import/Export JSON: Backup or restore your entries and settings.
 - Help/Guide: Opens the project page for more docs.

@@ -1,9 +1,15 @@
 # YoCatalog
-Formerly "YoWishlist-50". Wish List importer for use on YoWorld Forums or to create "Sales" for the YoWorld Facebook selling groups.
+Formerly "YoWishlist-50". Lists/Images/Avatars manager and Screen Grab tool for YoWorld forum and selling group posts.
 
 ## Privacy Policy
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
 - PRIVACY_POLICY: ./PRIVACY_POLICY.txt
+
+## What’s new (v1.5.2 — Unreleased)
+- Screen Grab: Anchors previews/exports to the picked container, so the crop starts at the exact tile you clicked even on pages with multiple grids.
+- Persistence: Remembers last tab, `Limit`, and `Scope`. Lists title draft and Avatars field drafts (name/group/tags/desc) are restored if you close/reopen the popup.
+- Avatars UX: Duplicate-name upload now asks to replace the existing entry; clicking anywhere on a card toggles selection; preview moved below controls to avoid clipping.
+- Copy & labels: Home text refreshed; “Wish Lists” tab renamed to “Lists”.
 
 ## What’s new (v1.5.1)
 - UX: Inline notice banner in the popup for concise success/error messages.
@@ -16,7 +22,7 @@ This extension does not track you and only stores settings and saved entries in 
 - Home: Welcome header and quick link to the Help Guide.
 - Avatars: Full catalog with upload/replace, name, group, tags, description, search/filter/sort, bulk select, and JSON import/export.
 - Images: Separate image library mirroring Wish Lists flows.
-- Wish Lists: Polished upload + BBCode; saved entries retained with caps.
+- Wish Lists (now "Lists"): Polished upload + BBCode; saved entries retained with caps.
 - Screen Grab: Works only on yoworld.info/template; friendly disabled state and “Open template page”.
 - Settings: Dedicated tab with imgbb key, caps, theme, header font, auto-switch toggle, Reset, Import/Export JSON, Help/Guide link.
 
@@ -57,8 +63,11 @@ This extension does not track you and only stores settings and saved entries in 
 - UX: Press Enter in Scope to scroll to and highlight the target section.
 
 ## Tabs overview
-- Main: set Limit, optional Scope name, Preview first N, Export (crop), Restore list, Pick card selector, Reset selectors, Open template.
-- Share: single Saved list (Save/Rename/Delete), drag/drop/paste image, Upload with fallbacks, Copy URL/BBCode, Clear image.
-- Settings: get/save/test imgbb key, theme and header font, Switch to Share after capture, saved cap, Reset settings, Import/Export JSON, Help link.
+- Home: Overview of features (Screen Grab, Lists, Avatars, Images) and quick tips.
+- Screen Grab: Set `Limit` and optional `Scope`, preview the first N, export a stitched crop, restore, pick a card selector, reset selectors, or open the template page.
+- Lists (formerly Wish Lists): Load/Drop/Paste image, Upload to host, Copy URL/BBCode, Save/Rename/Delete entries; remembers last selection; import/export JSON.
+- Avatars: Catalog with name/group/tags/description, upload/replace image, search/filter/sort, bulk select (click card), JSON import/export, and quick copy/share actions.
+- Images: A separate image library with the same tools as Lists.
+- Settings: imgbb key, caps, theme, header font, auto switch to Lists after capture, Reset, Import/Export JSON, Help link.
 
-Note: Works on yoworld.info/template. If detection misses your grid, use Pick card selector on a single item tile, then retry.
+Note: Works on yoworld.info/template. If detection misses your grid, use Pick card selector on a single item tile, then retry. Scope helps target the right section when multiple grids exist.
