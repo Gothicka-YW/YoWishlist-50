@@ -466,7 +466,10 @@ const docTop = rect.top + window.scrollY;
     try{
       const count = Math.max(0, Number(idx)||0);
       if (count <= 0) return 0;
-      const cards = findCards(root);
+      // Prefer the originally saved container within this root for consistent ordering
+      let target = root;
+      try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===root || root.contains(saved))) target = saved; }catch{}
+      const cards = findCards(target);
       const upto = Math.min(count, cards.length);
       for (let i=0; i<upto; i++){
         const n = cards[i];
@@ -478,7 +481,9 @@ const docTop = rect.top + window.scrollY;
   }
   function removeBeyond(limit, root, skipRestore=false){
     if (!skipRestore) restore();
-    const cards=findCards(root);
+    let target = root;
+    try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===root || root.contains(saved))) target = saved; }catch{}
+    const cards=findCards(target);
     if(!cards.length) return {ok:false,count:0,total:0,reason:'no-cards'};
     for(let i=limit;i<cards.length;i++){
       const n=cards[i];
@@ -491,7 +496,10 @@ const docTop = rect.top + window.scrollY;
   // Remove all cards before the clicked/ hinted card to start the list at the user's pick
   function trimStartFromHint(root){
     try{
-      const cards = findCards(root);
+      // Prefer saved container within this root for stable enumeration
+      let target = root;
+      try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===root || root.contains(saved))) target = saved; }catch{}
+      const cards = findCards(target);
       if (!cards.length) return { idx: 0, used: 'auto' };
       // Prefer matching the originally clicked element by selector path
       let idx = -1;
@@ -610,11 +618,13 @@ const docTop = rect.top + window.scrollY;
       // Hide items above the picked tile, then remove beyond N
       const startInfo = trimStartFromHint(rootInfo.root);
       // Persist starting index and container selector for export to reuse without re-picking
-      try{
-        const cards = findCards(rootInfo.root);
-        state.previewStartIdx = Math.max(0, Number(startInfo && startInfo.idx || 0));
-        state.previewContainerSel = uniqueCssPath(rootInfo.root);
-      } catch {}
+        try{
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const cards = findCards(target);
+          state.previewStartIdx = Math.max(0, Number(startInfo && startInfo.idx || 0));
+          state.previewContainerSel = uniqueCssPath(target);
+        } catch {}
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok) toast('Could not detect item grid — pick a tile again or scroll the section into view, then retry.');
       else toast(`Preview: showing first ${res.count} of ${res.total}`);
@@ -632,7 +642,9 @@ const docTop = rect.top + window.scrollY;
       let startInfo = null;
       if (state.previewStartIdx > 0){
         try{
-          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const same = state.previewContainerSel && (uniqueCssPath(target) === state.previewContainerSel);
           if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
         } catch {}
       }
@@ -656,7 +668,9 @@ const docTop = rect.top + window.scrollY;
       let startInfo = null;
       if (state.previewStartIdx > 0){
         try{
-          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const same = state.previewContainerSel && (uniqueCssPath(target) === state.previewContainerSel);
           if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
         } catch {}
       }
@@ -722,7 +736,9 @@ const docTop = rect.top + window.scrollY;
       let startInfo = null;
       if (state.previewStartIdx > 0){
         try{
-          const same = state.previewContainerSel && (uniqueCssPath(rootInfo.root) === state.previewContainerSel);
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const same = state.previewContainerSel && (uniqueCssPath(target) === state.previewContainerSel);
           if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
         } catch {}
       }

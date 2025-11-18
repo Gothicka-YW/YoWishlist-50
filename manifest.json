@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YoCatalog",
-  "version": "1.5",
-  "description": "Export the first N items on yoworld.info/template. Cropped export stitches full height without scroll artifacts. Fan Tool",
+  "version": "1.5.1",
+  "description": "YoWorld fan tool: Screen Grab stitched crops from yoworld.info/template plus Avatars, Wish Lists, and Images libraries with uploads and BBCode.",
   "permissions": [
     "storage",
     "activeTab",

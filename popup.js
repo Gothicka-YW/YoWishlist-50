@@ -31,6 +31,8 @@
     , imagesSavedEntries: 'yl50_images_saved_entries'
     , imagesSavedLast: 'yl50_images_saved_last'
     , imagesIncludeTitle: 'yl50_images_include_title'
+    , savedTitleDraft: 'yl50_saved_title_draft'
+    , avatarDraft: 'yl50_av_draft'
   };
   // Inline notice helper
   let __noticeTimer = null;
@@ -50,7 +52,7 @@
       __noticeTimer = setTimeout(()=>{ box.style.display='none'; }, Math.max(1200, timeout|0));
     }catch{ try{ alert(String(message||'')); }catch{} }
   }
-  chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'home', yl50_include_title:true, yl50_avatars:[], yl50_avatar_cap:'100', yl50_avatar_last:'', yl50_avatar_last_group:'', yl50_avatar_search:'', yl50_images_saved_entries:[], yl50_images_saved_last:'', yl50_images_include_title:true }, (res) => {
+  chrome.storage.sync.get({ yl50_limit:50, yl50_columns:5, yl50_scope_name:'', yl50_imgbb_key:'', yl50_theme:'default', yl50_auto_switch_share:true, yl50_header_font:'', yl50_saved_cap:'50', yl50_saved_entries:[], yl50_lastTab:'home', yl50_include_title:true, yl50_avatars:[], yl50_avatar_cap:'100', yl50_avatar_last:'', yl50_avatar_last_group:'', yl50_avatar_search:'', yl50_images_saved_entries:[], yl50_images_saved_last:'', yl50_images_include_title:true, yl50_saved_title_draft:'', yl50_av_draft:{} }, (res) => {
     $('#limit').value = res.yl50_limit || 50;
     if (document.getElementById('columns')) document.getElementById('columns').value = res.yl50_columns || 5;
     $('#imgbb-key').value = res.yl50_imgbb_key || '';
@@ -75,6 +77,15 @@
     maybeMigrateLegacy(() => {
       loadSavedEntries((entries)=> renderSavedSelect(entries));
     });
+    // Restore drafts
+    try{
+      if (document.getElementById('saved-title')) document.getElementById('saved-title').value = String(res.yl50_saved_title_draft||'');
+      const avd = (res.yl50_av_draft||{});
+      if (document.getElementById('av-name')) document.getElementById('av-name').value = String(avd.name||'');
+      if (document.getElementById('av-group')) document.getElementById('av-group').value = String(avd.group||'');
+      if (document.getElementById('av-tags')) document.getElementById('av-tags').value = String(avd.tags||'');
+      if (document.getElementById('av-desc')) document.getElementById('av-desc').value = String(avd.desc||'');
+    }catch{}
     // Brand icon preload: try to swap to custom raven icon only if available
     const brand = document.getElementById('brand-logo');
     if (brand){
@@ -193,6 +204,8 @@
         if (bulk){
           const cb=document.createElement('input'); cb.type='checkbox'; cb.checked = selectedSet.has(a.id);
           cb.addEventListener('change', ()=>{ if(cb.checked) selectedSet.add(a.id); else selectedSet.delete(a.id); updateBulkButtons(); });
+          // Toggle selection by clicking anywhere on the card (except the checkbox itself)
+          card.addEventListener('click', (e)=>{ const t=e.target; if(t && t.tagName==='INPUT') return; cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
           card.appendChild(cb);
         } else {
           card.addEventListener('click', ()=>{
@@ -305,12 +318,29 @@
         loadAvatars(entries=>{
           const cap = avatarCapValue();
           const now = Date.now();
-          const next = enforceAvatarCap([...entries, { id: __uuid(), name, group, tags: normalizeTags(tagsRaw), desc, url, createdAt: now, updatedAt: now }], cap);
-          saveAvatars(next, ()=>{
-            delete document.getElementById('av-image-url')?.dataset?.dataUrl;
-            document.getElementById('av-image-url').value = url;
-            renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
-          });
+          const dupIdx = entries.findIndex(e => String(e.name||'').trim().toLowerCase() === name.toLowerCase());
+          if (dupIdx >= 0){
+            const ok = confirm(`An avatar named "${entries[dupIdx].name}" already exists. Override its image and details?`);
+            if (!ok) return;
+            entries[dupIdx].group = group;
+            entries[dupIdx].tags = normalizeTags(tagsRaw);
+            entries[dupIdx].desc = desc;
+            entries[dupIdx].url = url;
+            entries[dupIdx].updatedAt = now;
+            const next = enforceAvatarCap(entries, cap);
+            saveAvatars(next, ()=>{
+              delete document.getElementById('av-image-url')?.dataset?.dataUrl;
+              document.getElementById('av-image-url').value = url;
+              renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+            });
+          } else {
+            const next = enforceAvatarCap([...entries, { id: __uuid(), name, group, tags: normalizeTags(tagsRaw), desc, url, createdAt: now, updatedAt: now }], cap);
+            saveAvatars(next, ()=>{
+              delete document.getElementById('av-image-url')?.dataset?.dataUrl;
+              document.getElementById('av-image-url').value = url;
+              renderAvatarGrid(next, document.getElementById('av-group-filter')?.value, document.getElementById('av-search')?.value);
+            });
+          }
         });
       });
     });
@@ -359,6 +389,22 @@
   function stageAvatarDataUrl(dataUrl){
     if(!dataUrl) return; const iu=document.getElementById('av-image-url'); const img=document.getElementById('av-image-preview'); if(iu){ iu.value=''; iu.dataset.dataUrl=dataUrl; } if(img){ img.src=dataUrl; img.style.display='block'; }
   }
+  // Persist avatar draft fields while typing
+  ;['av-name','av-group','av-tags','av-desc'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    let t=null; el.addEventListener('input', ()=>{
+      clearTimeout(t); t=setTimeout(()=>{
+        const draft = {
+          name: String(document.getElementById('av-name')?.value||''),
+          group: String(document.getElementById('av-group')?.value||''),
+          tags: String(document.getElementById('av-tags')?.value||''),
+          desc: String(document.getElementById('av-desc')?.value||'')
+        };
+        chrome.storage.sync.set({ [STORAGE_KEYS.avatarDraft]: draft });
+      }, 150);
+    });
+  });
   // Upload logic (reuse existing fallback chain)
   function uploadAvatarDataUrl(dataUrl, done){
     const status=document.getElementById('av-upload-status'); if(status) status.textContent='Trying imgbb…';
@@ -532,6 +578,24 @@
           });
         });
       }
+    });
+  }
+
+  // Persist scope name while typing
+  if (document.getElementById('scope-name')){
+    let t=null; document.getElementById('scope-name').addEventListener('input', ()=>{
+      clearTimeout(t); t=setTimeout(()=>{
+        const v = (document.getElementById('scope-name').value||'').trim();
+        chrome.storage.sync.set({ [STORAGE_KEYS.scopeName]: v });
+      }, 200);
+    });
+  }
+
+  // Persist limit when changed
+  if (document.getElementById('limit')){
+    document.getElementById('limit').addEventListener('change', ()=>{
+      const v = Math.max(1, Math.min(100, Number(document.getElementById('limit').value)||50));
+      chrome.storage.sync.set({ [STORAGE_KEYS.limit]: v });
     });
   }
 
@@ -840,6 +904,16 @@
         updatePreviewAndFieldsFromEntry(entry);
         chrome.storage.sync.set({ [STORAGE_KEYS.savedLast]: entry.title });
       });
+    });
+  }
+
+  // Persist draft title while typing (Lists tab)
+  if (document.getElementById('saved-title')){
+    let tt=null; document.getElementById('saved-title').addEventListener('input', ()=>{
+      clearTimeout(tt); tt=setTimeout(()=>{
+        const v = String(document.getElementById('saved-title').value||'');
+        chrome.storage.sync.set({ [STORAGE_KEYS.savedTitleDraft]: v });
+      }, 150);
     });
   }
 

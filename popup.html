@@ -230,7 +230,7 @@
       <div class="row" id="tabs">
         <button id="tab-home" class="tab active" style="flex:1">Home</button>
         <button id="tab-main" class="tab" style="flex:1">Screen Grab</button>
-        <button id="tab-share" class="tab" style="flex:1">Wish Lists</button>
+        <button id="tab-share" class="tab" style="flex:1">Lists</button>
         <button id="tab-avatars" class="tab" style="flex:1">Avatars</button>
         <button id="tab-images" class="tab" style="flex:1">Images</button>
         <button id="tab-settings" class="tab" style="flex:1">Settings</button>
@@ -256,13 +256,13 @@
         </div>
         <div style="display:flex; flex-direction:column; gap:10px; padding:8px; border:1px solid var(--border); border-radius:12px; background: var(--surface-2)">
           <h3 style="margin:0; font-size:16px">Screen Grab</h3>
-          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Capture your wish list from the <b>yoworld.info/template</b> page. Preview the first N items, precisely <b>pick</b> the card selector if auto-detect misses, then <b>Export (crop)</b> a clean stitched image. Use <b>Restore list</b> to reinstate original content after experimentation. Keep the template page visible during capture for best results.</p>
-          <h3 style="margin:0; font-size:16px">Wish Lists</h3>
-          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Save your captured lists with a title, then quickly <b>copy</b> the direct image URL or forum <b>BBCode</b>. Load, rename, or delete entries, and <b>export/import</b> your library as JSON. Optionally auto-switch here after an export.</p>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Capture your Wish List or Sales/WTB Lists from the <b>yoworld.info/template</b> page. Preview the first N items, precisely <b>pick</b> the card selector if auto-detect misses, then <b>Export (crop)</b> a clean stitched image. Use <b>Restore list</b> to reinstate original content. Keep the template page visible and "Preview Template" checked during capture for best results.</p>
+          <h3 style="margin:0; font-size:16px">Lists</h3>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Save your captured lists with a title, then quickly <b>copy</b> the direct image URL or forum <b>BBCode</b>. Load, rename, or delete entries, and <b>export/import</b> your saved lists. Optionally auto-switch here after an export (found in the settings tab).</p>
           <h3 style="margin:0; font-size:16px">Avatars</h3>
-          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Build a personal avatar catalog. <b>Upload</b> (or paste/drag) images, add <b>name</b>, <b>group</b>, <b>tags</b>, and a description. Search, sort, bulk select, <b>replace</b> images, and <b>export/import</b> JSON. One click to copy URL or BBCode for forum posts.</p>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">Build a personal avatar catalog. <b>Upload</b> (or paste/drag) images, add <b>name</b>, <b>group</b>, <b>tags</b>, and a description. Search, sort, bulk select, <b>replace</b> images, and <b>export/import</b> your avatar catalog. One click to copy URL or BBCode for forum posts.</p>
           <h3 style="margin:0; font-size:16px">Images</h3>
-          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">A simple image library separate from Wish Lists. <b>Upload</b> (or paste/drag) any image, save with a title, then <b>copy</b> the URL or BBCode. Load, rename, delete entries, and <b>export/import</b> as needed.</p>
+          <p style="margin:0; font-size:12px; line-height:1.3; color:var(--muted)">A simple image library separate from Lists and Avatars. <b>Upload</b> (or paste/drag) any image, save with a title, then <b>copy</b> the URL or BBCode. Load, rename, delete entries, and <b>export/import</b> as needed.</p>
         </div>
         <div class="row" style="justify-content:center; margin-top:8px;">
           <a href="https://github.com/Gothicka-YW/YoCatalog/blob/main/YoCatalog_HelpGuide.md" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline">Open Help Guide</a>
@@ -299,7 +299,9 @@
             <button id="av-btn-copy-url" style="width:auto">Copy URL</button>
           </div>
         </div>
-        <div id="av-preview" style="flex:1; border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--surface-2)">
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch">
+        <div id="av-preview" style="border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--surface-2)">
           <div class="muted" id="av-preview-empty">Select an avatar to view details.</div>
           <div id="av-preview-body" style="display:none">
             <img id="av-preview-image" alt="avatar" style="max-width:100%; border-radius:10px; border:1px solid var(--border)" />

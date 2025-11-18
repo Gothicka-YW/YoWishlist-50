@@ -5,6 +5,21 @@ Formerly "YoWishlist-50". Wish List importer for use on YoWorld Forums or to cre
 This extension does not track you and only stores settings and saved entries in Chrome storage. Read the full policy here:
 - PRIVACY_POLICY: ./PRIVACY_POLICY.txt
 
+## What’s new (v1.5.1)
+- UX: Inline notice banner in the popup for concise success/error messages.
+- Import/Export: Standardized messages and an import summary for Wish Lists, Images, and Avatars.
+- Cleanup: Removed a duplicate Export JSON handler; kept a single centralized export.
+- Safety: Delete confirmations for Wish Lists and Images entries.
+
+## What’s new (v1.5.0)
+- Rename and expansion: Project renamed to "YoCatalog" with new tabs and features.
+- Home: Welcome header and quick link to the Help Guide.
+- Avatars: Full catalog with upload/replace, name, group, tags, description, search/filter/sort, bulk select, and JSON import/export.
+- Images: Separate image library mirroring Wish Lists flows.
+- Wish Lists: Polished upload + BBCode; saved entries retained with caps.
+- Screen Grab: Works only on yoworld.info/template; friendly disabled state and “Open template page”.
+- Settings: Dedicated tab with imgbb key, caps, theme, header font, auto-switch toggle, Reset, Import/Export JSON, Help/Guide link.
+
 ## What’s new (v1.4.9)
 - Refinement: The mid-list pick index is only used when a selector hint exists and matches the current section, so exports without preview work as before.
 
