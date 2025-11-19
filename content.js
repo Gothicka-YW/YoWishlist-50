@@ -378,7 +378,6 @@ const docTop = rect.top + window.scrollY;
     try{ const arr = findCards(root).filter(n=> n && n.offsetParent!==null); return arr.slice(0, Math.max(0, n)); }catch{return [];} }
   function rectForImageArea(card){
     try{
-      // Prefer the largest <img> inside the card (likely the grey box area)
       const imgs = Array.from(card.querySelectorAll('img'));
       let best = null, bestA = 0;
       for (const im of imgs){
@@ -388,10 +387,25 @@ const docTop = rect.top + window.scrollY;
       return { left: r.left + window.scrollX, top: r.top + window.scrollY, right: r.right + window.scrollX, bottom: r.bottom + window.scrollY };
     }catch{ return null; }
   }
-  function unionRectForCards(cards){
+  function rectForCardBounds(card){
+    try{
+      const r = card.getBoundingClientRect();
+      return { left: r.left + window.scrollX, top: r.top + window.scrollY, right: r.right + window.scrollX, bottom: r.bottom + window.scrollY };
+    }catch{ return null; }
+  }
+  function isPreviewActive(){
+    try{
+      const cbs = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+      const cb = cbs.find(cb => (cb.nextSibling && (cb.nextSibling.textContent||'').toLowerCase().includes('preview')))
+        || cbs.find(cb => (cb.id && (document.querySelector(`label[for="${cb.id}"]`)?.textContent||'').toLowerCase().includes('preview')));
+      return !!(cb && cb.checked);
+    }catch{ return false; }
+  }
+  function unionRectForCards(cards, useCardBounds=false){
     let L=Infinity, T=Infinity, R=-Infinity, B=-Infinity, count=0;
     for (const c of cards){
-      const rr = rectForImageArea(c); if (!rr) continue;
+      const rr = useCardBounds ? rectForCardBounds(c) : rectForImageArea(c);
+      if (!rr) continue;
       L = Math.min(L, rr.left); T = Math.min(T, rr.top); R = Math.max(R, rr.right); B = Math.max(B, rr.bottom); count++;
     }
     if (!count || !isFinite(L) || !isFinite(T) || !isFinite(R) || !isFinite(B)) return null;
@@ -543,7 +557,7 @@ const docTop = rect.top + window.scrollY;
   function clickDownload(){ const labels=['download template','download','export','save image','save','png','jpg']; const btns=Array.from(document.querySelectorAll('button, a, [role="button"], input[type="button"], input[type="submit"]')); for(const b of btns){ const t=(b.textContent||b.value||'').trim().toLowerCase(); if(t && labels.some(l=>t.includes(l))){ b.click(); return true; } } const all=Array.from(document.querySelectorAll('*')); for(const el of all){ const t=(el.getAttribute('title')||el.getAttribute('aria-label')||'').toLowerCase(); if(t && ['download','export','save'].some(l=>t.includes(l))){ el.click(); return true; } } return false; }
 
   // Picker
-  function startPicker(){ if(state.picking) return; state.picking=true; const overlay=document.createElement('div'); Object.assign(overlay.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,0.08)',zIndex:2147483646,cursor:'crosshair',pointerEvents:'none'}); const tip=document.createElement('div'); tip.textContent='Click a single tile (outer white area). Press Esc to cancel.'; Object.assign(tip.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',top:'10px',background:'#111',color:'#fff',padding:'6px 10px',borderRadius:'8px',fontSize:'12px',zIndex:2147483647}); document.documentElement.append(overlay,tip); toast('Picker armed — click a tile');
+  function startPicker(){ if(state.picking) return; state.picking=true; const overlay=document.createElement('div'); Object.assign(overlay.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,0.08)',zIndex:2147483646,cursor:'crosshair',pointerEvents:'none'}); const tip=document.createElement('div'); tip.textContent='Click anywhere on a card. Press Esc to cancel.'; Object.assign(tip.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',top:'10px',background:'#111',color:'#fff',padding:'6px 10px',borderRadius:'8px',fontSize:'12px',zIndex:2147483647}); document.documentElement.append(overlay,tip); toast('Picker armed — click a card');
     function cleanup(){ try{ overlay.remove(); tip.remove(); }catch{} document.removeEventListener('click', onDocClick, true); document.removeEventListener('keydown', onKey, true); state.picking=false; }
     function onKey(e){ if(e.key==='Escape'){ e.preventDefault(); cleanup(); toast('Picker cancelled'); } }
     function countDirectChildrenMatching(parent, selector){ try{ return Array.from(parent.children).filter(ch=> ch.matches(selector) && ch.offsetParent!==null).length; }catch{return 0;} }
@@ -686,7 +700,7 @@ const docTop = rect.top + window.scrollY;
           // Prefer tight union of the first N cards (limit) by image area
           const n = Math.max(1, Number(state.limit||6));
           const cards = firstNCards(rootInfo.root, n);
-          const uni = unionRectForCards(cards);
+          const uni = unionRectForCards(cards, isPreviewActive());
           if (uni){
             // Expand union height to cover desired rows even if only a subset is currently rendered
             const cols = Math.max(1, Number(state.columns||5));
@@ -694,7 +708,7 @@ const docTop = rect.top + window.scrollY;
             // Estimate row height from visible cards' image areas
             let sumH = 0, cntH = 0;
             for (const c of cards){
-              try { const r = rectForImageArea(c); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
+              try { const r = (isPreviewActive() ? rectForCardBounds(c) : rectForImageArea(c)); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
             }
             let rowH = 0;
             if (cntH > 0) rowH = Math.round(sumH / cntH);
@@ -752,13 +766,13 @@ const docTop = rect.top + window.scrollY;
           let dataUrl = '';
           const n = Math.max(1, Number(state.limit||6));
           const cards = firstNCards(rootInfo.root, n);
-          const uni = unionRectForCards(cards);
+          const uni = unionRectForCards(cards, isPreviewActive());
           if (uni){
             const cols = Math.max(1, Number(state.columns||5));
             const rowsDesired = Math.max(1, Math.ceil(n / cols));
             let sumH = 0, cntH = 0;
             for (const c of cards){
-              try { const r = rectForImageArea(c); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
+              try { const r = (isPreviewActive() ? rectForCardBounds(c) : rectForImageArea(c)); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
             }
             let rowH = 0;
             if (cntH > 0) rowH = Math.round(sumH / cntH);
