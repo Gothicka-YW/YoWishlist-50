@@ -229,7 +229,7 @@ Read the full policy in `PRIVACY_POLICY.txt`.
 
 - Your extension’s UI uses the “YoCatalog” name; some legacy docs may say “YoWishlist‑50”.
 - See `README.md` for highlights and `CHANGELOG.md` for detailed changes.
-- Issue reporting and feedback: https://github.com/Gothicka-YW/YoCollections/issues
+- Issue reporting and feedback: https://github.com/Gothicka-YW/YoCatalog/issues
 
 [▶ Watch: What’s New — Coming soon]
 

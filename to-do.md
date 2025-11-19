@@ -13,6 +13,7 @@
     8) UI and UX consistent with existing tabs.
     9) Non-destructive to existing data.
     10) Help Guide entry + “Video — Coming soon” placeholder.
+    11) Field to save the user's YoWorld Home Link. User can change this defined link.
 
   - Acceptance criteria:
     - Users can upload, save, and manage signature entries separately from Lists/Images.
@@ -20,3 +21,5 @@
     - Presets apply size constraints without degrading quality unexpectedly.
     - JSON round-trip works and doesn’t impact existing datasets.
     - Help Guide updated with a dedicated section and placeholder video link.
+
+Sample Signature Format: [url=https://yoworld.com/index.php?d=h108837847][img]https://i.ibb.co/HfQsRRcF/OQgt8gp-Imgur.png[/img][/url]

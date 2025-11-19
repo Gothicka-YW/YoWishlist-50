@@ -699,7 +699,9 @@ const docTop = rect.top + window.scrollY;
         try{
           // Prefer tight union of the first N cards (limit) by image area
           const n = Math.max(1, Number(state.limit||6));
-          const cards = firstNCards(rootInfo.root, n);
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const cards = firstNCards(target, n);
           const uni = unionRectForCards(cards, isPreviewActive());
           if (uni){
             // Expand union height to cover desired rows even if only a subset is currently rendered
@@ -721,7 +723,7 @@ const docTop = rect.top + window.scrollY;
             dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
             // Fallback to container crop with minimal side padding
-            dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
+            dataUrl = await captureStitchedTo(target, { top: 6, right: 0, bottom: 68, left: 0 });
           }
         } finally {
           forceWhiteBackground(false);
@@ -765,7 +767,9 @@ const docTop = rect.top + window.scrollY;
         try {
           let dataUrl = '';
           const n = Math.max(1, Number(state.limit||6));
-          const cards = firstNCards(rootInfo.root, n);
+          let target = rootInfo.root;
+          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
+          const cards = firstNCards(target, n);
           const uni = unionRectForCards(cards, isPreviewActive());
           if (uni){
             const cols = Math.max(1, Number(state.columns||5));
@@ -784,7 +788,7 @@ const docTop = rect.top + window.scrollY;
             const pad = paddingForCount(cards.length);
             dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
-            dataUrl = await captureStitchedTo(rootInfo.root, { top: 6, right: 0, bottom: 68, left: 0 });
+            dataUrl = await captureStitchedTo(target, { top: 6, right: 0, bottom: 68, left: 0 });
           }
           forceWhiteBackground(false);
           restoreHiddenOverlays();
