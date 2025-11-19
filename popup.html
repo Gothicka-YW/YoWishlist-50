@@ -223,6 +223,16 @@
   .notice-error{ border-color: #8c2f2f; background: rgba(220, 53, 69, .12); }
   .notice-info{ border-color: var(--btn-border); background: rgba(80,123,145,.10); }
   .notice .close{ position:absolute; right:8px; top:6px; cursor:pointer; font-weight:700; opacity:.6; }
+  /* Saved list type chips */
+  .saved-type-chip{ background: var(--surface-2); border:1px solid var(--border); border-radius:16px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .saved-type-chip.active{ background: var(--accent); color: var(--accent-contrast); border-color: var(--btn-border); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .saved-type-chip:focus-visible{ outline:none; box-shadow: 0 0 0 3px var(--accent-ring); }
+  #saved-filter-chips{ flex: 1 1 auto; }
+  /* Badges for dropdown (not all UAs style option backgrounds; fallback text prefixes) */
+  .badge{ display:inline-block; padding:2px 6px; border-radius:12px; font-size:10px; font-weight:700; letter-spacing:.3px; }
+  .badge-wish{ background:#7e57c2; color:#fff; }
+  .badge-sale{ background:#0f9d58; color:#fff; }
+  .badge-wtb{ background:#008b8b; color:#fff; }
     </style>
   </head>
   <body>
@@ -399,9 +409,23 @@
         </div>
         <div style="display:flex; gap:6px; margin-top:6px">
           <input id="saved-title" placeholder="Save Title" style="flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+          <select id="saved-type" style="flex:0 0 120px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)">
+            <option value="wish" selected>Wish List</option>
+            <option value="sale">Sale</option>
+            <option value="wtb">WTB</option>
+          </select>
           <button id="btn-saved-save" style="width:auto">Save Title</button>
           <button id="btn-saved-rename" style="width:auto">Rename</button>
         </div>
+        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center">
+          <div id="saved-filter-chips" style="display:flex; gap:6px; flex-wrap:wrap">
+            <button type="button" class="saved-type-chip active" data-type="wish">Wish List</button>
+            <button type="button" class="saved-type-chip active" data-type="sale">Sale</button>
+            <button type="button" class="saved-type-chip active" data-type="wtb">WTB</button>
+          </div>
+          <input id="saved-search" placeholder="Search titles" style="flex:1; min-width:160px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color: var(--fg)" />
+        </div>
+        <div class="muted" id="saved-counts" style="margin-top:4px; font-size:11px">Counts: —</div>
       </div>
       <div class="row" style="flex-direction:column; align-items:stretch">
         <div id="drop-zone">Drop image here, paste (Ctrl+V), or use Load image file…</div>

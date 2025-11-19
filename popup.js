@@ -721,13 +721,32 @@
     });
   }
 
-  // ===== Saved entries (single dropdown model) =====
-  // Stored as array of { title:string, url:string, updatedAt:number, createdAt:number }
+  // ===== Saved entries (Lists tab) with type filtering =====
+  // Model: { title:string, url:string, type:'wish'|'sale'|'wtb', updatedAt:number, createdAt:number }
+  const SAVED_DEFAULT_TYPE = 'wish';
+  let __savedFilterTypes = new Set(['wish','sale','wtb']);
+  let __savedSearch = '';
+  chrome.storage.sync.get({ yl50_saved_filters: ['wish','sale','wtb'], yl50_saved_search: '' }, r => {
+    try {
+      const arr = Array.isArray(r.yl50_saved_filters) ? r.yl50_saved_filters.filter(t => ['wish','sale','wtb'].includes(t)) : ['wish','sale','wtb'];
+      __savedFilterTypes = new Set(arr.length ? arr : ['wish','sale','wtb']);
+    } catch {}
+    __savedSearch = String(r.yl50_saved_search || '').trim();
+    const searchEl = document.getElementById('saved-search'); if (searchEl) searchEl.value = __savedSearch;
+    document.querySelectorAll('#saved-filter-chips .saved-type-chip').forEach(chip => {
+      const t = chip.getAttribute('data-type'); if (__savedFilterTypes.has(t)) chip.classList.add('active'); else chip.classList.remove('active');
+    });
+  });
   function loadSavedEntries(cb){
     chrome.storage.sync.get({ [STORAGE_KEYS.savedEntries]: [] }, (r)=>{
       let list = Array.isArray(r[STORAGE_KEYS.savedEntries]) ? r[STORAGE_KEYS.savedEntries] : [];
-      // sanitize
-      list = list.map(e=>({ title: String(e.title||'').trim(), url: String(e.url||''), updatedAt: Number(e.updatedAt||0), createdAt: Number(e.createdAt||Date.now()) }));
+      list = list.map(e=>({
+        title: String(e.title||'').trim(),
+        url: String(e.url||''),
+        type: ['wish','sale','wtb'].includes(e.type) ? e.type : SAVED_DEFAULT_TYPE,
+        updatedAt: Number(e.updatedAt||0),
+        createdAt: Number(e.createdAt||Date.now())
+      }));
       cb(list);
     });
   }
@@ -747,21 +766,30 @@
     return sorted.slice(0, cap).sort((a,b)=> a.title.localeCompare(b.title, undefined, { sensitivity:'base' }));
   }
   function formatDateYMD(ts){ try{ return new Date(ts||Date.now()).toISOString().slice(0,10); }catch{return ''; } }
+  function computeSavedCounts(entries){
+    const counts = { wish:0, sale:0, wtb:0 };
+    for (const e of entries){ if (counts.hasOwnProperty(e.type)) counts[e.type]++; }
+    const el = document.getElementById('saved-counts'); if (el){ el.textContent = `Counts: Wish ${counts.wish} | Sale ${counts.sale} | WTB ${counts.wtb}`; }
+  }
   function renderSavedSelect(entries, selectTitle){
     const sel = document.getElementById('saved-select'); if(!sel) return;
     sel.innerHTML = '';
-    const list = [...(entries||[])].sort((a,b)=> a.title.localeCompare(b.title, undefined, { sensitivity:'base' }));
+    let list = [...(entries||[])];
+    list = list.filter(e => __savedFilterTypes.has(e.type));
+    if (__savedSearch){ const q = __savedSearch.toLowerCase(); list = list.filter(e => e.title.toLowerCase().includes(q)); }
+    list.sort((a,b)=> a.title.localeCompare(b.title, undefined, { sensitivity:'base' }));
     for (const e of list){
       const opt = document.createElement('option');
       opt.value = e.title;
       const date = e.updatedAt ? formatDateYMD(e.updatedAt) : '';
-      opt.textContent = date ? `${e.title} — ${date}` : e.title;
+      const prefix = e.type === 'wish' ? 'WL' : (e.type === 'sale' ? 'S' : 'WTB');
+      opt.textContent = date ? `[${prefix}] ${e.title} — ${date}` : `[${prefix}] ${e.title}`;
       opt.dataset.url = e.url||'';
       sel.appendChild(opt);
     }
+    computeSavedCounts(entries);
     if (selectTitle && list.some(x=> x.title === selectTitle)) sel.value = selectTitle;
     else {
-      // Try to restore last selection
       chrome.storage.sync.get({ [STORAGE_KEYS.savedLast]: '' }, r => {
         const last = r[STORAGE_KEYS.savedLast] || '';
         if (last && list.some(x=> x.title === last)) sel.value = last;
@@ -840,9 +868,11 @@
           }
           // User chose not to replace; fall through to save as a new unique title
         }
+        const typeEl = document.getElementById('saved-type');
+        const entryType = (typeEl && ['wish','sale','wtb'].includes(typeEl.value)) ? typeEl.value : SAVED_DEFAULT_TYPE;
         const title = nextUniqueTitle(entries, base);
         const now = Date.now();
-        const next = enforceCap([...entries, { title, url:'', updatedAt:0, createdAt: now }], document.getElementById('saved-cap-select')?.value || '50');
+        const next = enforceCap([...entries, { title, url:'', type: entryType, updatedAt:0, createdAt: now }], document.getElementById('saved-cap-select')?.value || '50');
         saveSavedEntries(next, ()=>{
           // re-read for safety, then render and persist last selection
           loadSavedEntries((fresh)=>{
@@ -866,6 +896,8 @@
           newTitle = nextUniqueTitle(entries.filter((_,i)=> i!==idx), base);
         }
         entries[idx].title = newTitle;
+        const typeEl = document.getElementById('saved-type');
+        if (typeEl && ['wish','sale','wtb'].includes(typeEl.value)) entries[idx].type = typeEl.value;
         saveSavedEntries(entries, ()=>{
           loadSavedEntries((fresh)=>{
             renderSavedSelect(fresh, newTitle);
@@ -901,6 +933,7 @@
         const entry = entries.find(e=> e.title === sel.value);
         if (!entry) return;
         const input = document.getElementById('saved-title'); if (input) input.value = entry.title;
+        const typeEl = document.getElementById('saved-type'); if (typeEl && ['wish','sale','wtb'].includes(entry.type)) typeEl.value = entry.type;
         updatePreviewAndFieldsFromEntry(entry);
         chrome.storage.sync.set({ [STORAGE_KEYS.savedLast]: entry.title });
       });
@@ -914,6 +947,37 @@
         const v = String(document.getElementById('saved-title').value||'');
         chrome.storage.sync.set({ [STORAGE_KEYS.savedTitleDraft]: v });
       }, 150);
+    });
+  }
+  // Persist type preference
+  if (document.getElementById('saved-type')){
+    document.getElementById('saved-type').addEventListener('change', ()=>{
+      const v = document.getElementById('saved-type').value;
+      chrome.storage.sync.set({ yl50_saved_type_last: v });
+    });
+    chrome.storage.sync.get({ yl50_saved_type_last: 'wish' }, r => {
+      if (['wish','sale','wtb'].includes(r.yl50_saved_type_last)) document.getElementById('saved-type').value = r.yl50_saved_type_last;
+    });
+  }
+  // Filter chips
+  document.querySelectorAll('#saved-filter-chips .saved-type-chip').forEach(chip => {
+    chip.addEventListener('click', ()=>{
+      const t = chip.getAttribute('data-type'); if (!t) return;
+      if (chip.classList.contains('active')){ chip.classList.remove('active'); __savedFilterTypes.delete(t); }
+      else { chip.classList.add('active'); __savedFilterTypes.add(t); }
+      if (!__savedFilterTypes.size){ __savedFilterTypes = new Set(['wish','sale','wtb']); document.querySelectorAll('#saved-filter-chips .saved-type-chip').forEach(c=> c.classList.add('active')); }
+      chrome.storage.sync.set({ yl50_saved_filters: Array.from(__savedFilterTypes) });
+      loadSavedEntries(entries=> renderSavedSelect(entries));
+    });
+  });
+  // Search
+  if (document.getElementById('saved-search')){
+    let st=null; document.getElementById('saved-search').addEventListener('input', ()=>{
+      clearTimeout(st); st=setTimeout(()=>{
+        __savedSearch = String(document.getElementById('saved-search').value||'').trim();
+        chrome.storage.sync.set({ yl50_saved_search: __savedSearch });
+        loadSavedEntries(entries=> renderSavedSelect(entries));
+      }, 180);
     });
   }
 

@@ -1,5 +1,26 @@
 # YoCatalog Changelog
 
+## 1.5.2 - 2025-11-19
+Added:
+- Multi-Type Lists: Wish List (WL), Sale (S), and WTB types with sticky type selector when saving.
+- Filter Chips: Toggle per-type visibility (Wish / Sale / WTB) with persisted state across sessions.
+- Search Box: Case-insensitive title search for saved list entries.
+- Badges & Prefixes: Colored badges and `[WL]`, `[S]`, `[WTB]` prefixes in saved entries.
+- Counts Summary: Live analytics-style totals (Wish | Sale | WTB) independent of active filters.
+- Help Guide: Expanded Lists section now documents types, chips, search, badges, counts, and JSON export changes.
+
+Changed:
+- JSON Export/Import: Includes `type`; older imports default missing values to `wish`.
+- Lists Tab wording updated to reflect broader scope beyond just wish lists.
+
+Fixed:
+- Card Selection: Picker now allows clicking anywhere on a card surface (not just the image area).
+- Crop Offset: Resolved issue where exported crops could start several rows above the preview selection.
+- Preview Bounds: Full-card bounds used during preview/export for reliable tight crops.
+
+Internal:
+- Migration routine assigns `type: "wish"` to legacy saved entries on first run after update.
+
 ## 1.5.1 - 2025-11-14
 - UX: Added an inline notice banner for concise success/error messages in the popup.
 - Import/Export: Standardized messages and added an import summary showing counts for Wish Lists, Images, and Avatars.

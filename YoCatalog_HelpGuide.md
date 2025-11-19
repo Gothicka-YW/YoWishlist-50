@@ -88,17 +88,22 @@ Notes and tips:
 
 ## Lists (formerly “Wish Lists”)
 
-What it does: lets you stage an image (paste/drag‑drop/file), upload it to a host, save under a title, and quickly copy URL or forum BBCode (optionally with a bolded title).
+What it does: lets you stage an image (paste/drag‑drop/file), upload it, classify the entry as a Wish List, Sale list, or WTB (want‑to‑buy) list, save under a title, and quickly copy URL or forum BBCode (optionally with a bolded title).
 
 Core actions:
 - Stage image: paste, drag‑drop, or choose a file.
-- Upload: imgbb (primary; use your API key) with best‑effort fallbacks when available.
-- Copy URL or BBCode: BBCode includes title when “Include title” is toggled on.
-- Save/Rename/Delete entries: remembers the last selection; entries listed with timestamps.
+- Choose Type: Wish List (WL), Sale (S), or WTB before saving (sticky last choice).
+- Upload: imgbb (primary; use your API key) with fallbacks (postimages best‑effort → catbox) when available.
+- Copy URL or BBCode: BBCode optionally includes bolded title; the type can be reflected in the title you choose.
+- Save/Rename/Delete entries: remembers last selection; entries listed with timestamps and a type prefix `[WL]`, `[S]`, or `[WTB]`.
+- Filter & Search: Toggle chips to show/hide types and use the Search box to match titles (case‑insensitive).
+- Counts summary: Live analytics-style line (e.g., `Counts: Wish 12 | Sale 5 | WTB 3`) for total entries per type (unaffected by current chip filters).
 
 Tips:
-- Keep titles unique for easier reuse; the app auto‑uniquifies by appending a number or timestamp when needed.
-- Use Import/Export JSON (in Settings) to back up and restore.
+- You can change the type while renaming an entry (select new type then Rename).
+- Keep titles unique; auto‑uniquify logic appends a number or timestamp when needed.
+- Export JSON includes the `type` field; older imports without `type` default to `wish`.
+- If you hide all types by toggling chips off, the tool auto‑re‑enables all three so the list never disappears entirely.
 
 [▶ Watch: Lists Workflow — Coming soon]
 
