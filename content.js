@@ -601,6 +601,27 @@ const docTop = rect.top + window.scrollY;
   // Messages
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (!msg || !msg.type) return;
+    // Diagnostic helper (temporary): enumerate first 40 cards and state
+    if (msg.type === 'yl50-diag'){
+      try {
+        const container = getContainer();
+        const rootInfo = pickTargetSection(state.which, container);
+        let target = rootInfo.root;
+        try { const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; } catch {}
+        const cards = findCards(target);
+        const labels = cards.slice(0,40).map((c,i)=>{
+          try {
+            const img = c.querySelector('img');
+            const alt = img && (img.alt||img.title||'');
+            const txt = (c.textContent||'').trim().replace(/\s+/g,' ').slice(0,120);
+            const chosen = alt && alt.length>2 ? alt : txt;
+            return `${i}: ${chosen}`;
+          } catch{ return `${i}: (err)`; }
+        });
+        sendResponse && sendResponse({ ok:true, previewStartIdx: state.previewStartIdx, pickIndex: state.pickIndex, limit: state.limit, columns: state.columns, containerSel: state.containerSel, cardSel: state.cardSel, selectorHint: state.selectorHint, previewContainerSel: state.previewContainerSel, totalCards: cards.length, labels });
+      } catch(e){ sendResponse && sendResponse({ ok:false, error: String(e&&e.message||e) }); }
+      return true;
+    }
     if (msg.type === 'yl50-ping'){ sendResponse && sendResponse({ ok:true, ready:true }); return true; }
     if (msg.type === 'yl50-update-settings'){
       if (typeof msg.limit==='number') state.limit=msg.limit;
@@ -691,6 +712,30 @@ const docTop = rect.top + window.scrollY;
       if (!startInfo) startInfo = trimStartFromHint(rootInfo.root);
       const res=removeBeyond(state.limit, rootInfo.root, true);
       if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+      // Instrumentation: log enumeration and start index
+      try {
+        let target = rootInfo.root;
+        try { const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; } catch {}
+        const allCards = findCards(target);
+        const sample = allCards.slice(0, 40).map((c,i)=>{
+          let imgTxt='';
+          try{ const img=c.querySelector('img'); imgTxt = img && (img.alt||img.title||'') || ''; }catch{}
+          const txt = (c.textContent||'').trim().replace(/\s+/g,' ').slice(0,100);
+          return `${i}${i===startInfo.idx?'*':''}: ${imgTxt||txt}`;
+        });
+        console.debug('[yl50-export-crop diag]', {
+          previewStartIdx: state.previewStartIdx,
+          appliedStartIdx: startInfo.idx,
+          startMode: startInfo.used,
+          pickIndex: state.pickIndex,
+          limit: state.limit,
+          columns: state.columns,
+          containerSel: state.containerSel,
+          previewContainerSel: state.previewContainerSel,
+          totalCards: allCards.length,
+          first40: sample
+        });
+      } catch(e){ console.warn('[yl50-export-crop diag error]', e); }
       forceWhiteBackground(true);
       setTimeout(async ()=>{
         // Hide sticky/fixed overlays that could block rows during capture
@@ -702,6 +747,16 @@ const docTop = rect.top + window.scrollY;
           let target = rootInfo.root;
           try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
           const cards = firstNCards(target, n);
+          // Instrument union cards
+          try {
+            const unionLabels = cards.map((c,i)=>{
+              let imgTxt='';
+              try{ const img=c.querySelector('img'); imgTxt = img && (img.alt||img.title||'') || ''; }catch{}
+              const txt=(c.textContent||'').trim().replace(/\s+/g,' ').slice(0,100);
+              return `${i}: ${imgTxt||txt}`;
+            });
+            console.debug('[yl50-export-crop union source]', { count: cards.length, unionLabels });
+          } catch{}
           const uni = unionRectForCards(cards, isPreviewActive());
           if (uni){
             // Expand union height to cover desired rows even if only a subset is currently rendered
@@ -720,9 +775,11 @@ const docTop = rect.top + window.scrollY;
             }
             const targetH = Math.max(uni.height, rowH * rowsDesired);
             const pad = paddingForCount(cards.length);
+            console.debug('[yl50-export-crop rect]', { uni, rowH, rowsDesired, targetH, pad });
             dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
             // Fallback to container crop with minimal side padding
+            console.debug('[yl50-export-crop fallback-container]');
             dataUrl = await captureStitchedTo(target, { top: 6, right: 0, bottom: 68, left: 0 });
           }
         } finally {
