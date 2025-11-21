@@ -34,7 +34,40 @@ function __resolveContainerElement__(container) {
     state.containerSel = res.yl50_container || '';
     state.cardSel = res.yl50_card || '';
     state.pickIndex = (typeof res.yl50_pick_index === 'number') ? res.yl50_pick_index : -1;
-    console.debug('[YoWishlist 50] ready (limit=%s, scope=%s, scopeName=%s, hint=%s, container=%s, card=%s)', state.limit, state.which, state.scopeName, state.selectorHint, state.containerSel, state.cardSel);
+    console.log('[YoCatalog] content script ready', { limit: state.limit, scope: state.which, scopeName: state.scopeName, hint: state.selectorHint, container: state.containerSel, card: state.cardSel });
+    // Global diagnostic hook to verify injection even if message logs fail
+    try {
+      window.__yl50Diag = function(){
+        try {
+          const container = getContainer();
+          const rootInfo = pickTargetSection(state.which, container);
+          let target = rootInfo.root;
+          try { const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; } catch {}
+          const cards = findCards(target);
+          const labels = cards.slice(0,50).map((c,i)=>{
+            let imgTxt='';
+            try{ const img=c.querySelector('img'); imgTxt = img && (img.alt||img.title||'') || ''; }catch{}
+            const txt=(c.textContent||'').trim().replace(/\s+/g,' ').slice(0,120);
+            return `${i}: ${imgTxt||txt}`;
+          });
+          return {
+            limit: state.limit,
+            columns: state.columns,
+            which: state.which,
+            scopeName: state.scopeName,
+            containerSel: state.containerSel,
+            cardSel: state.cardSel,
+            selectorHint: state.selectorHint,
+            pickIndex: state.pickIndex,
+            previewStartIdx: state.previewStartIdx,
+            previewContainerSel: state.previewContainerSel,
+            totalCards: cards.length,
+            labels
+          };
+        } catch(e){ return { ok:false, error: String(e&&e.message||e) }; }
+      };
+      console.log('[YoCatalog] __yl50Diag hook installed');
+    } catch(e){ console.warn('[YoWishlist 50] Failed to install __yl50Diag', e); }
   });
 
   function toast(msg, ms=1800){
@@ -650,17 +683,21 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
+      // Determine stable target container (saved container if inside the picked root)
+      let containerTarget = rootInfo.root;
+      try {
+        const saved = state.containerSel ? document.querySelector(state.containerSel) : null;
+        if (saved && (saved === rootInfo.root || rootInfo.root.contains(saved))) containerTarget = saved;
+      } catch {}
       // Hide items above the picked tile, then remove beyond N
-      const startInfo = trimStartFromHint(rootInfo.root);
+      const startInfo = trimStartFromHint(containerTarget);
       // Persist starting index and container selector for export to reuse without re-picking
         try{
-          let target = rootInfo.root;
-          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
-          const cards = findCards(target);
+          const cards = findCards(containerTarget);
           state.previewStartIdx = Math.max(0, Number(startInfo && startInfo.idx || 0));
-          state.previewContainerSel = uniqueCssPath(target);
+          state.previewContainerSel = uniqueCssPath(containerTarget);
         } catch {}
-      const res=removeBeyond(state.limit, rootInfo.root, true);
+      const res=removeBeyond(state.limit, containerTarget, true);
       if(!res.ok) toast('Could not detect item grid — pick a tile again or scroll the section into view, then retry.');
       else toast(`Preview: showing first ${res.count} of ${res.total}`);
   sendResponse && sendResponse({ ok: res.ok, count: res.count, total: res.total, startFrom: (startInfo && startInfo.used) || 'auto' });
@@ -699,73 +736,41 @@ const docTop = rect.top + window.scrollY;
       const container=getContainer();
       const rootInfo=pickTargetSection(state.which, container);
       removeOtherSection(rootInfo.root);
-      // Reuse preview start if targeting same container
-      let startInfo = null;
-      if (state.previewStartIdx > 0){
-        try{
-          let target = rootInfo.root;
-          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
-          const same = state.previewContainerSel && (uniqueCssPath(target) === state.previewContainerSel);
-          if (same){ trimStartByIndex(rootInfo.root, state.previewStartIdx); startInfo = { idx: state.previewStartIdx, used: 'picked' }; }
-        } catch {}
-      }
-      if (!startInfo) startInfo = trimStartFromHint(rootInfo.root);
-      const res=removeBeyond(state.limit, rootInfo.root, true);
-      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
-      // Instrumentation: log enumeration and start index
+      // Determine stable target container (saved container if inside the picked root)
+      let target = rootInfo.root;
       try {
-        let target = rootInfo.root;
-        try { const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; } catch {}
+        const saved = state.containerSel ? document.querySelector(state.containerSel) : null;
+        if (saved && (saved === rootInfo.root || rootInfo.root.contains(saved))) target = saved;
+      } catch {}
+      // Remove cards before picked/hinted start (physical removal ensures union enumeration aligns with preview)
+      const startInfo = trimStartFromHint(target);
+      const res = removeBeyond(state.limit, target, true);
+      if(!res.ok){ toast('Could not detect item grid — use Pick card selector first.'); sendResponse && sendResponse({ ok:false }); restoreRemovedSections(); return true; }
+      // Diagnostic enumeration of first N after trimming
+      try {
         const allCards = findCards(target);
-        const sample = allCards.slice(0, 40).map((c,i)=>{
+        const sample = allCards.slice(0, Math.min(state.limit, 40)).map((c,i)=>{
           let imgTxt='';
           try{ const img=c.querySelector('img'); imgTxt = img && (img.alt||img.title||'') || ''; }catch{}
-          const txt = (c.textContent||'').trim().replace(/\s+/g,' ').slice(0,100);
-          return `${i}${i===startInfo.idx?'*':''}: ${imgTxt||txt}`;
+          const txt=(c.textContent||'').trim().replace(/\s+/g,' ').slice(0,80);
+          return `${i}${i===0?'*':''}: ${imgTxt||txt}`;
         });
-        console.debug('[yl50-export-crop diag]', {
-          previewStartIdx: state.previewStartIdx,
-          appliedStartIdx: startInfo.idx,
-          startMode: startInfo.used,
-          pickIndex: state.pickIndex,
-          limit: state.limit,
-          columns: state.columns,
-          containerSel: state.containerSel,
-          previewContainerSel: state.previewContainerSel,
-          totalCards: allCards.length,
-          first40: sample
-        });
-      } catch(e){ console.warn('[yl50-export-crop diag error]', e); }
+        console.log('[YoCatalog start-diagnostics]', { pickedIndex: state.pickIndex, appliedIndex: startInfo.idx, mode: startInfo.used, limit: state.limit, containerSel: state.containerSel, totalAfterTrim: findCards(target).length, firstSample: sample });
+      } catch {}
       forceWhiteBackground(true);
       setTimeout(async ()=>{
-        // Hide sticky/fixed overlays that could block rows during capture
         hideFixedAndStickyOverlays(rootInfo.root);
         let dataUrl = '';
         try{
-          // Prefer tight union of the first N cards (limit) by image area
           const n = Math.max(1, Number(state.limit||6));
-          let target = rootInfo.root;
-          try{ const saved = state.containerSel ? document.querySelector(state.containerSel) : null; if (saved && (saved===rootInfo.root || rootInfo.root.contains(saved))) target = saved; }catch{}
           const cards = firstNCards(target, n);
-          // Instrument union cards
-          try {
-            const unionLabels = cards.map((c,i)=>{
-              let imgTxt='';
-              try{ const img=c.querySelector('img'); imgTxt = img && (img.alt||img.title||'') || ''; }catch{}
-              const txt=(c.textContent||'').trim().replace(/\s+/g,' ').slice(0,100);
-              return `${i}: ${imgTxt||txt}`;
-            });
-            console.debug('[yl50-export-crop union source]', { count: cards.length, unionLabels });
-          } catch{}
-          const uni = unionRectForCards(cards, isPreviewActive());
+          const uni = unionRectForCards(cards, false);
           if (uni){
-            // Expand union height to cover desired rows even if only a subset is currently rendered
             const cols = Math.max(1, Number(state.columns||5));
             const rowsDesired = Math.max(1, Math.ceil(n / cols));
-            // Estimate row height from visible cards' image areas
             let sumH = 0, cntH = 0;
             for (const c of cards){
-              try { const r = (isPreviewActive() ? rectForCardBounds(c) : rectForImageArea(c)); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h > 0){ sumH += h; cntH++; } } catch {}
+              try { const r = rectForImageArea(c); const h = Math.max(0, (r.bottom||0) - (r.top||0)); if (h>0){ sumH+=h; cntH++; } } catch {}
             }
             let rowH = 0;
             if (cntH > 0) rowH = Math.round(sumH / cntH);
@@ -775,11 +780,8 @@ const docTop = rect.top + window.scrollY;
             }
             const targetH = Math.max(uni.height, rowH * rowsDesired);
             const pad = paddingForCount(cards.length);
-            console.debug('[yl50-export-crop rect]', { uni, rowH, rowsDesired, targetH, pad });
             dataUrl = await captureStitchedRect(uni.left, uni.top, uni.width, targetH, pad);
           } else {
-            // Fallback to container crop with minimal side padding
-            console.debug('[yl50-export-crop fallback-container]');
             dataUrl = await captureStitchedTo(target, { top: 6, right: 0, bottom: 68, left: 0 });
           }
         } finally {
@@ -795,7 +797,7 @@ const docTop = rect.top + window.scrollY;
           toast('Crop capture failed — try again or use the page\'s Download button.');
         }
       }, 300);
-  sendResponse && sendResponse({ ok:true, cropped:true, startFrom: (startInfo && startInfo.used) || 'auto' });
+      sendResponse && sendResponse({ ok:true, cropped:true, startFrom: (startInfo && startInfo.used) || 'auto' });
       return true;
     }
     if (msg.type === 'yl50-export-crop-data'){
